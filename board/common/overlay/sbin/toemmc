@@ -1,17 +1,36 @@
 #!/bin/bash
 
 if [[ -z "$1" ]]; then
-    echo "Usage: $0 <emmc_dev>"
+    echo "Usage: $0 <emmc_dev> [--net-config]"
     exit 1
 fi
 
 shopt -s extglob  # For extended globbing of /boot/*.{txt,ini,...}
 
-emmc_dev=$1
+cmdline_args="$*"
+
+function arg_present() {
+    for arg in ${cmdline_args}; do
+        if [ "${arg}" == "$1" ]; then
+            return 0
+        fi
+    done
+    
+    return 1
+}
 
 function msg() {
     echo " * $1"
 }
+
+NET_CONFIG_FILES=(
+    dnsmasq.conf
+    hostapd.conf
+    static_ip.conf
+    wpa_supplicant.conf
+)
+
+emmc_dev=$1
 
 source /tmp/disk_info
 
@@ -45,8 +64,18 @@ mkdir -p /data/.emmc_boot
 mount ${emmc_dev}p1 /data/.emmc_boot
 cd /data/.emmc_boot
 
-msg "Ajusting EMMC root device"
+msg "Adjusting EMMC root device"
 sed -i "s,${DISK_DEV},${emmc_dev},g" *.@(txt|ini|conf)
+
+if arg_present "--net-config"; then
+    msg "Copying network configuration"
+    for file in ${NET_CONFIG_FILES[*]}; do
+        path="/data/etc/${file}"
+        test -s ${path} || continue
+        cp ${path} .
+        msg "Copied ${file}"
+    done
+fi
 
 msg "Cleaning up"
 cd - >/dev/null
