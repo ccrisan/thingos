@@ -1,0 +1,8 @@
+config BR2_PACKAGE_PYTHON_UNQLITE
+	bool "python-unqlite"
+	select BR2_PACKAGE_HOST_PYTHON_CYTHON
+	help
+	  Fast Python bindings for UnQLite, a lightweight, embedded NoSQL
+	  database and JSON document store.
+
+	  https://github.com/coleifer/unqlite-python
