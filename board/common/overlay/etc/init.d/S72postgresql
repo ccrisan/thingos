@@ -31,10 +31,9 @@ start() {
     cd ${DB_DIR}
     
     if [[ ! -f ${DB_DIR}/PG_VERSION ]]; then
-	    msg_begin "Initializing postgresql db"
-	    run_pg_ctl initdb -s -D ${DB_DIR} &>> ${LOG}
-	    test $? == 0 && msg_done || msg_fail
-	    
+        msg_begin "Initializing postgresql data directory"
+        run_pg_ctl initdb -s -D ${DB_DIR} -o \'-E UTF-8 --no-locale\' &>> ${LOG}
+        test $? == 0 && msg_done || msg_fail
         echo "include_if_exists = '${CONF}'" >> ${DB_DIR}/postgresql.conf
     fi
 
