@@ -1,0 +1,7 @@
+config BR2_PACKAGE_PYTHON_ASYNCPG
+	bool "python-asyncpg"
+	select BR2_PACKAGE_HOST_PYTHON_CYTHON
+	help
+	  A fast PostgreSQL Database Client Library for Python/asyncio
+
+	  https://github.com/MagicStack/asyncpg
