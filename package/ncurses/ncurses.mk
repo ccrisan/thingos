@@ -50,6 +50,9 @@ NCURSES_PATCH = \
 		ncurses-6.1-20200118.patch.gz \
 	)
 
+# ncurses-6.1-20191012.patch.gz
+NCURSES_IGNORE_CVES += CVE-2019-17594 CVE-2019-17595
+
 NCURSES_CONF_OPTS = \
 	--without-cxx \
 	--without-cxx-binding \
@@ -183,6 +186,9 @@ define HOST_NCURSES_BUILD_CMDS
 	$(HOST_MAKE_ENV) $(MAKE1) -C $(@D) sources
 	$(HOST_MAKE_ENV) $(MAKE) -C $(@D)/progs tic
 endef
+
+HOST_NCURSES_CONF_ENV = \
+	ac_cv_path_LDCONFIG=""
 
 HOST_NCURSES_CONF_OPTS = \
 	--with-shared \

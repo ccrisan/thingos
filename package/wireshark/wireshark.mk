@@ -4,7 +4,7 @@
 #
 ################################################################################
 
-WIRESHARK_VERSION = 3.2.7
+WIRESHARK_VERSION = 3.2.10
 WIRESHARK_SOURCE = wireshark-$(WIRESHARK_VERSION).tar.xz
 WIRESHARK_SITE = https://www.wireshark.org/download/src/all-versions
 WIRESHARK_LICENSE = wireshark license
@@ -153,6 +153,13 @@ WIRESHARK_CONF_OPTS += -DBUILD_sdjournal=ON
 WIRESHARK_DEPENDENCIES += systemd
 else
 WIRESHARK_CONF_OPTS += -DBUILD_sdjournal=OFF
+endif
+
+ifeq ($(BR2_PACKAGE_ZSTD),y)
+WIRESHARK_CONF_OPTS += -DENABLE_ZSTD=ON
+WIRESHARK_DEPENDENCIES += zstd
+else
+WIRESHARK_CONF_OPTS += -DENABLE_ZSTD=OFF
 endif
 
 # Disable plugins as some of them (like l16mono) can't be built
