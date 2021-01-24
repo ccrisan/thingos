@@ -4,7 +4,7 @@
 #
 ################################################################################
 
-WLROOTS_VERSION = 0.10.1
+WLROOTS_VERSION = 0.11.0
 WLROOTS_SITE = https://github.com/swaywm/wlroots/releases/download/$(WLROOTS_VERSION)
 WLROOTS_LICENSE = MIT
 WLROOTS_LICENSE_FILES = LICENSE
@@ -25,13 +25,6 @@ WLROOTS_CONF_OPTS = -Dexamples=false -Dxcb-errors=disabled
 
 ifeq ($(BR2_PACKAGE_FFMPEG),y)
 WLROOTS_DEPENDENCIES += ffmpeg
-endif
-
-ifeq ($(BR2_PACKAGE_LIBCAP),y)
-WLROOTS_CONF_OPTS += -Dlibcap=enabled
-WLROOTS_DEPENDENCIES += libcap
-else
-WLROOTS_CONF_OPTS += -Dlibcap=disabled
 endif
 
 ifeq ($(BR2_PACKAGE_LIBPNG),y)

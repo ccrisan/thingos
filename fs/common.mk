@@ -36,18 +36,28 @@ ROOTFS_USERS_TABLES = $(call qstrip,$(BR2_ROOTFS_USERS_TABLES))
 ROOTFS_FULL_DEVICES_TABLE = $(FS_DIR)/full_devices_table.txt
 ROOTFS_FULL_USERS_TABLE = $(FS_DIR)/full_users_table.txt
 
-ifeq ($(BR2_REPRODUCIBLE),y)
-define ROOTFS_REPRODUCIBLE
-	find $(TARGET_DIR) -print0 | xargs -0 -r touch -hd @$(SOURCE_DATE_EPOCH)
-endef
-endif
-
 ROOTFS_COMMON_NAME = rootfs-common
 ROOTFS_COMMON_TYPE = rootfs
 ROOTFS_COMMON_DEPENDENCIES = \
 	host-fakeroot host-makedevs \
 	$(BR2_TAR_HOST_DEPENDENCY) \
 	$(if $(PACKAGES_USERS)$(ROOTFS_USERS_TABLES),host-mkpasswd)
+
+ifeq ($(BR2_REPRODUCIBLE),y)
+define ROOTFS_REPRODUCIBLE
+	find $(TARGET_DIR) -print0 | xargs -0 -r touch -hd @$(SOURCE_DATE_EPOCH)
+endef
+endif
+
+ifeq ($(BR2_PACKAGE_REFPOLICY),y)
+define ROOTFS_SELINUX
+	$(HOST_DIR)/sbin/setfiles -m -r $(TARGET_DIR) \
+		-c $(TARGET_DIR)/etc/selinux/targeted/policy/policy.$(BR2_PACKAGE_LIBSEPOL_POLICY_VERSION) \
+		$(TARGET_DIR)/etc/selinux/targeted/contexts/files/file_contexts \
+		$(TARGET_DIR)
+endef
+ROOTFS_COMMON_DEPENDENCIES += host-policycoreutils
+endif
 
 ROOTFS_COMMON_FINAL_RECURSIVE_DEPENDENCIES = $(sort \
 	$(if $(filter undefined,$(origin ROOTFS_COMMON_FINAL_RECURSIVE_DEPENDENCIES__X)), \
@@ -172,6 +182,7 @@ $$(BINARIES_DIR)/$$(ROOTFS_$(2)_FINAL_IMAGE_NAME): $$(ROOTFS_$(2)_DEPENDENCIES)
 	$$(foreach hook,$$(ROOTFS_$(2)_PRE_GEN_HOOKS),\
 		$$(call PRINTF,$$($$(hook))) >> $$(FAKEROOT_SCRIPT)$$(sep))
 	$$(call PRINTF,$$(ROOTFS_REPRODUCIBLE)) >> $$(FAKEROOT_SCRIPT)
+	$$(call PRINTF,$$(ROOTFS_SELINUX)) >> $$(FAKEROOT_SCRIPT)
 	$$(call PRINTF,$$(ROOTFS_$(2)_CMD)) >> $$(FAKEROOT_SCRIPT)
 	chmod a+x $$(FAKEROOT_SCRIPT)
 	PATH=$$(BR_PATH) FAKEROOTDONTTRYCHOWN=1 $$(HOST_DIR)/bin/fakeroot -- $$(FAKEROOT_SCRIPT)

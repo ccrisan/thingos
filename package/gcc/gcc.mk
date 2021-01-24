@@ -125,16 +125,6 @@ else
 HOST_GCC_COMMON_CONF_OPTS += --disable-libquadmath --disable-libquadmath-support
 endif
 
-# Disable libsanitizer due to a build issue with gcc 7.5 and glibc 2.31.
-# It would require to backport the following upstream commit
-# https://gcc.gnu.org/git/?p=gcc.git;a=commitdiff;h=4abc46b51af5751d657764d0c44b8a4aeed06302
-# but it conflict with gcc 7.5 libsanitizer code.
-# Disable libsanitizer since the gcc 7.5 branch is now closed
-# (unmaintained) and it's not a trivial merge.
-ifeq ($(BR2_TOOLCHAIN_BUILDROOT_GLIBC)$(BR2_GCC_VERSION_7_X),yy)
-HOST_GCC_COMMON_CONF_OPTS += --disable-libsanitizer
-endif
-
 # libsanitizer requires wordexp, not in default uClibc config. Also
 # doesn't build properly with musl.
 ifeq ($(BR2_TOOLCHAIN_BUILDROOT_UCLIBC)$(BR2_TOOLCHAIN_BUILDROOT_MUSL),y)
@@ -233,6 +223,7 @@ endif
 # Enable proper double/long double for SPE ABI
 ifeq ($(BR2_powerpc_SPE),y)
 HOST_GCC_COMMON_CONF_OPTS += \
+	--enable-obsolete \
 	--enable-e500_double \
 	--with-long-double-128
 endif
@@ -258,6 +249,11 @@ endif
 # requires at least gcc 6.2.
 # See sysdeps/powerpc/powerpc64le/configure.ac
 ifeq ($(BR2_TOOLCHAIN_USES_GLIBC)$(BR2_TOOLCHAIN_GCC_AT_LEAST_6)$(BR2_powerpc64le),yyy)
+HOST_GCC_COMMON_CONF_OPTS += \
+	--with-long-double-128
+endif
+
+ifeq ($(BR2_s390x),y)
 HOST_GCC_COMMON_CONF_OPTS += \
 	--with-long-double-128
 endif

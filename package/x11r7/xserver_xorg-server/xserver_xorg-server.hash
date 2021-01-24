@@ -1,8 +1,3 @@
-# From http://lists.x.org/archives/xorg-announce/2014-June/002440.html
-sha1  7a95765e56b124758fcd7b609589e65b8870880b  xorg-server-1.14.7.tar.bz2
-sha256  fcf66fa6ad86227613d2d3e8ae13ded297e2a1e947e9060a083eaf80d323451f  xorg-server-1.14.7.tar.bz2
-# From https://lists.x.org/archives/xorg-announce/2015-October/002650.html
-sha256  0c4b45c116a812a996eb432d8508cf26c2ec8c3916ff2a50781796882f8d6457  xorg-server-1.17.4.tar.bz2
 # From https://lists.x.org/archives/xorg-announce/2020-December/003067.html
 sha256  977420c082450dc808de301ef56af4856d653eea71519a973c3490a780cb7c99  xorg-server-1.20.10.tar.bz2
 sha512  a07bee380bb72f2117fe6f831a6e4aded19bea1f2b36e42a019a30348e98d6fe65c0617cf819be9c6b405502f88cafb829df30aab32393774b71f1418a4cefae  xorg-server-1.20.10.tar.bz2
