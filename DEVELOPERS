@@ -232,6 +232,8 @@ N:	Anthony Viallard <viallard@syscom-instruments.com>
 F:	package/gnuplot/
 
 N:	Antoine Ténart <antoine.tenart@bootlin.com>
+F:	package/libselinux/
+F:	package/refpolicy/
 F:	package/wf111/
 
 N:	Antony Pavlov <antonynpavlov@gmail.com>
@@ -1888,6 +1890,7 @@ F:	package/tpm-tools/
 F:	package/trousers/
 
 N:	Norbert Lange <nolange79@gmail.com>
+F:	package/systemd/
 F:	package/tcf-agent/
 
 N:	Nylon Chen <nylon7@andestech.com>
@@ -2220,6 +2223,7 @@ F:	package/davfs2/
 
 N:	Ryan Barnett <ryan.barnett@rockwellcollins.com>
 F:	package/atftp/
+F:	package/c-periphery/
 F:	package/miraclecast/
 F:	package/python-pysnmp/
 F:	package/python-pysnmp-mibs/
