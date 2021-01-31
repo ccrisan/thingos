@@ -1,0 +1,48 @@
+#!/bin/bash
+
+CONF="/etc/connman/main.conf"
+PROG="/usr/sbin/connmand"
+LOG="/var/log/connman.log"
+RUN_DIR="/var/run/connman"
+
+
+test -x ${PROG} || exit 0
+test -s ${CONF} || exit 0
+
+test -n "${OS_VERSION}" || source /etc/init.d/base
+
+
+start() {
+    msg_begin "Starting connman"
+
+    mkdir -p ${RUN_DIR}
+    ifconfig lo up
+    ${PROG} -n -r &> ${LOG} &
+    test $? == 0 && msg_done || msg_fail
+}
+
+stop() {
+    msg_begin "Stopping connman"
+    killall -q $(basename ${PROG})
+    msg_done
+}
+
+
+case "$1" in
+    start)
+        start
+        ;;
+        
+    stop)
+        stop
+        ;;
+        
+    restart)
+        stop
+        start
+        ;;
+    
+    *)
+        echo "Usage: $0 {start|stop|restart}"
+        exit 1
+esac

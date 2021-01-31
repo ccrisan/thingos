@@ -11,8 +11,12 @@ SYS_INTERFACES_CONF="/etc/network/interfaces"
 BOOT_INTERFACES_CONF="/boot/network/interfaces"
 INTERFACES_CONF="/data/etc/network/interfaces"
 
+CONNMAN_CONF="/etc/connman/main.conf"
+
 LINK_NEGO_TIMEOUT=10
 
+
+test -s ${CONNMAN_CONF} && exit 0
 
 test -n "${OS_VERSION}" || source /etc/init.d/base
 
