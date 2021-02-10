@@ -200,24 +200,24 @@ rm -rf ${TARGET}/usr/lib/python*/site-packages/samba/
 rm -rf ${TARGET}/usr/lib/python*/unittest/
 
 # buildroot default startup scripts
-rm -f ${TARGET}/etc/init.d/S??syslogd
-rm -f ${TARGET}/etc/init.d/S??sysctl
-rm -f ${TARGET}/etc/init.d/S??udev
-rm -f ${TARGET}/etc/init.d/S??watchdog
-rm -f ${TARGET}/etc/init.d/S??urandom
-rm -f ${TARGET}/etc/init.d/S??rngd
-rm -f ${TARGET}/etc/init.d/S??sntp
-rm -f ${TARGET}/etc/init.d/S??ntp
-rm -f ${TARGET}/etc/init.d/S??chrony
-rm -f ${TARGET}/etc/init.d/S??sshd
-rm -f ${TARGET}/etc/init.d/S??proftpd
-rm -f ${TARGET}/etc/init.d/S??postgresql
-rm -f ${TARGET}/etc/init.d/S??redis
-rm -f ${TARGET}/etc/init.d/S??openvpn
-rm -f ${TARGET}/etc/init.d/S??dhcp-relay
-rm -f ${TARGET}/etc/init.d/S??dhcp-server
-rm -f ${TARGET}/etc/init.d/S??dnsmasq
-rm -f ${TARGET}/etc/init.d/S??smb
+rm -f ${TARGET}/etc/init.d/S01syslogd
+rm -f ${TARGET}/etc/init.d/S02sysctl
+rm -f ${TARGET}/etc/init.d/S10udev
+rm -f ${TARGET}/etc/init.d/S15watchdog
+rm -f ${TARGET}/etc/init.d/S20urandom
+rm -f ${TARGET}/etc/init.d/S21rngd
+rm -f ${TARGET}/etc/init.d/S48sntp
+rm -f ${TARGET}/etc/init.d/S49ntp
+rm -f ${TARGET}/etc/init.d/S49chrony
+rm -f ${TARGET}/etc/init.d/S50sshd
+rm -f ${TARGET}/etc/init.d/S50proftpd
+rm -f ${TARGET}/etc/init.d/S50postgresql
+rm -f ${TARGET}/etc/init.d/S50redis
+rm -f ${TARGET}/etc/init.d/S60openvpn
+rm -f ${TARGET}/etc/init.d/S80dhcp-relay
+rm -f ${TARGET}/etc/init.d/S80dhcp-server
+rm -f ${TARGET}/etc/init.d/S80dnsmasq
+rm -f ${TARGET}/etc/init.d/S91smb
 
 # other unwanted dirs
 rm -rf ${TARGET}/data/*
