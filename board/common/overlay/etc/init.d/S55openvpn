@@ -10,6 +10,8 @@ PROG="/usr/sbin/openvpn"
 WATCH_CONF="/data/etc/watch.conf"
 
 LINK_WATCH=true
+NETWATCH_RETRIES=3
+NETWATCH_INTERVAL=20
 
 
 test -x ${PROG} || exit 0
@@ -27,12 +29,21 @@ running() {
 }
 
 watch() {
+    count=0
+    NETWATCH_RETRIES=$((${NETWATCH_RETRIES} - 1))
     while true; do
-        sleep 5
-        if ! running; then
-            logger -t openvpn "dead, calling panic action"
-            panic_action openvpn
-            break
+        sleep ${NETWATCH_INTERVAL}
+        if running; then
+            count=0
+        else
+            if [[ ${count} -lt ${NETWATCH_RETRIES} ]]; then
+                logger -t openvpn "dead"
+                count=$((${count} + 1))
+                continue
+            else
+                logger -t openvpn "dead, calling panic action"
+                panic_action openvpn
+            fi
         fi
     done
 }
@@ -52,6 +63,7 @@ start() {
 stop() {
     msg_begin "Stopping openvpn"
     killall $(basename ${PROG}) &>/dev/null
+    ps | grep $(basename ${PROG}) | grep -v $$ | grep -v grep | tr -s ' ' | sed -e 's/^\s//' | cut -d ' ' -f 1 | xargs -r kill
     msg_done
 }
 
