@@ -27,6 +27,8 @@ rm -f ${TARGET}/etc/os-release
 rm -f ${TARGET}/etc/hostapd.conf
 rm -f ${TARGET}/etc/timezone
 
+rm -f ${TARGET}/etc/cron.d/e2scrub_all
+
 # /usr/share stuff
 rm -rf ${TARGET}/usr/share/bash-completion/
 rm -rf ${TARGET}/usr/share/locale/*
