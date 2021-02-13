@@ -16,6 +16,11 @@ panic_action() {
         delay=${PANIC_REBOOT_DELAY_MAX}
     fi
     
+    if [[ -e /var/run/panic_inhibited ]]; then
+        logger -t panic -s "reboot inhibited (caused by $1)"
+        return
+    fi
+    
     if [[ "${delay}" -gt 0 ]]; then
         logger -t panic -s "rebooting in ${delay} seconds (caused by $1)"
         sleep ${delay}
