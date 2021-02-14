@@ -1,7 +1,8 @@
 #!/bin/bash
 
+RESET_DELAY=300  # reset after 5 minutes of stable running
+
 source /etc/init.d/panic
 
 # reset panic counter after a successful boot
-echo 0 > ${PANIC_COUNTER_FILE}
-
+sleep ${RESET_DELAY} && echo 0 > ${PANIC_COUNTER_FILE} &
