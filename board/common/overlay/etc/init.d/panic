@@ -2,6 +2,8 @@
 PANIC_COUNTER_FILE="/var/lib/panic_counter"
 PANIC_REBOOT_DELAY_FACTOR=10
 PANIC_REBOOT_DELAY_MAX=3600  # reboot at least once an hour in case of panic
+PANIC_INHIBIT_FILE="/var/run/panic_inhibit"
+PANIC_INHIBIT_TIMEOUT=3600  # inhibit panic action for at most one hour
 
 
 panic_action() {
@@ -16,9 +18,14 @@ panic_action() {
         delay=${PANIC_REBOOT_DELAY_MAX}
     fi
     
-    if [[ -e /var/run/panic_inhibited ]]; then
-        logger -t panic -s "reboot inhibited (caused by $1)"
-        return
+    uptime=$(cat /proc/uptime | grep -oE '^[[:digit:]]+')
+    if [[ -s ${PANIC_INHIBIT_FILE} ]]; then
+        inhibit_uptime=$(cat ${PANIC_INHIBIT_FILE})
+        delta_uptime=$(expr "${uptime}" - "${inhibit_uptime}")
+        if [[ "${delta_uptime}" -lt ${PANIC_INHIBIT_TIMEOUT} ]]; then
+            logger -t panic -s "action inhibited (caused by $1)"
+            return
+        fi
     fi
     
     if [[ "${delay}" -gt 0 ]]; then
@@ -29,4 +36,3 @@ panic_action() {
     logger -t panic -s "rebooting (caused by $1)"
     /sbin/reboot
 }
-

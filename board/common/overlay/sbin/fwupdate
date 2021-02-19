@@ -448,7 +448,7 @@ function do_flash_boot() {
     umount /boot
     
     # prevent unwanted reboots during upgrade
-    touch /var/run/panic_inhibited
+    panic_inhibit
     mount -o remount,rw /
     mv /sbin/reboot /sbin/reboot.bak
     ln -s /bin/true /sbin/reboot
