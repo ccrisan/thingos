@@ -7,6 +7,9 @@ PANIC_INHIBIT_TIMEOUT=3600  # inhibit panic action for at most one hour
 
 
 panic_action() {
+    # $1 - service/component
+    # $2 - optional error message
+    
     # read counter from file
     panic_counter=$(cat ${PANIC_COUNTER_FILE} 2>/dev/null || echo 0)
     
@@ -17,6 +20,8 @@ panic_action() {
     if [[ "${delay}" -gt "${PANIC_REBOOT_DELAY_MAX}" ]]; then
         delay=${PANIC_REBOOT_DELAY_MAX}
     fi
+    
+    logger -t $1 -s "$2"
     
     uptime=$(cat /proc/uptime | grep -oE '^[[:digit:]]+')
     if [[ -s ${PANIC_INHIBIT_FILE} ]]; then

@@ -41,8 +41,7 @@ watch() {
                 count=$((${count} + 1))
                 continue
             else
-                logger -t openvpn "dead, calling panic action"
-                panic_action openvpn
+                panic_action openvpn "service dead"
             fi
         fi
     done

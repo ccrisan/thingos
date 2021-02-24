@@ -32,8 +32,7 @@ watch() {
                 count=$((${count} + 1))
                 continue
             else
-                logger -t netwatch "cannot connect to ${NETWATCH_HOST}:${NETWATCH_PORT}, calling panic action"
-                panic_action netwatch
+                panic_action netwatch "cannot connect to ${NETWATCH_HOST}:${NETWATCH_PORT}"
             fi
         fi
     done

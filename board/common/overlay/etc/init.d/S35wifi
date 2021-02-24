@@ -47,8 +47,7 @@ watch() {
                 count=$((${count} + 5))
                 logger -t wifi "disconnected"
             else
-                logger -t wifi "disconnected for ${LINK_WATCH_TIMEOUT} seconds, calling panic action"
-                panic_action wifi
+                panic_action wifi "disconnected for ${LINK_WATCH_TIMEOUT} seconds"
             fi
         fi
     done
