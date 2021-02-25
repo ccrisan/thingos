@@ -22,7 +22,6 @@ rm -rf ${TARGET}/etc/fstab
 
 rm -f ${TARGET}/etc/rc_maps.cfg
 rm -f ${TARGET}/etc/udev/hwdb.d/20-pci-vendor-model.hwdb
-rm -f ${TARGET}/etc/hostname
 rm -f ${TARGET}/etc/os-release
 rm -f ${TARGET}/etc/hostapd.conf
 rm -f ${TARGET}/etc/timezone
