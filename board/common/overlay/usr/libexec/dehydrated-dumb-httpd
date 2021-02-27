@@ -2,7 +2,7 @@
 
 CHALLENGE="$1"
 PORT=80
-LIFETIME=10
+LIFETIME=120
 TMP_RESPONSE="/tmp/dehydrated-response"
 LOG="/var/log/dehydrated-dumb-httpd.log"
 
