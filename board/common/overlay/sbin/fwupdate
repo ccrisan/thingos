@@ -117,7 +117,7 @@ function reallocate_boot_part() {
     boot_info=($(cat ${BOOT_INFO_FILE}))
 
     if [[ ${current_boot_info[1]} == ${boot_info[0]} ]] &&
-       [[ ${current_boot_info[2]} == ${boot_info[1]} ]]; then
+       [[ ${current_boot_info[3]} -ge $((${boot_info[2]} * 512)) ]]; then
 
         return  # all good
     fi
