@@ -156,7 +156,7 @@ function reallocate_root_part() {
     root_info=($(cat ${ROOT_INFO_FILE}))
 
     if [[ ${current_root_info[1]} == ${root_info[0]} ]] &&
-       [[ ${current_root_info[2]} == ${root_info[1]} ]]; then
+       [[ ${current_root_info[3]} -ge $((${root_info[2]} * 512)) ]]; then
 
         return  # all good
     fi
