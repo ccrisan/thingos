@@ -1,3 +1,4 @@
 13 * * * * /usr/sbin/logrotate /etc/logrotate.conf
 0 2 * * 0 /usr/sbin/https-update
 */15 * * * * /usr/sbin/dyndns-update
+*/15 * * * * date +%s > /var/lib/saved_date
