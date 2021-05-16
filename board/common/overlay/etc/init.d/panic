@@ -8,6 +8,19 @@ PANIC_INHIBIT_TIMEOUT=3600  # inhibit panic action for at most one hour
 test -n "${OS_DEBUG}" || source /etc/init.d/os_conf
 
 
+panic_is_inhibited() {
+    if [[ -s ${PANIC_INHIBIT_FILE} ]]; then
+        uptime=$(cat /proc/uptime | grep -oE '^[[:digit:]]+')
+        inhibit_uptime=$(cat ${PANIC_INHIBIT_FILE})
+        delta_uptime=$(expr "${uptime}" - "${inhibit_uptime}")
+        if [[ "${delta_uptime}" -lt ${PANIC_INHIBIT_TIMEOUT} ]]; then
+            return 0
+        fi
+    fi
+    
+    return 1
+}
+
 panic_action() {
     # $1 - service/component
     # $2 - optional error message
@@ -25,14 +38,9 @@ panic_action() {
     
     logger -t $1 -s "$2"
     
-    uptime=$(cat /proc/uptime | grep -oE '^[[:digit:]]+')
-    if [[ -s ${PANIC_INHIBIT_FILE} ]]; then
-        inhibit_uptime=$(cat ${PANIC_INHIBIT_FILE})
-        delta_uptime=$(expr "${uptime}" - "${inhibit_uptime}")
-        if [[ "${delta_uptime}" -lt ${PANIC_INHIBIT_TIMEOUT} ]]; then
-            logger -t panic -s "action inhibited (caused by $1)"
-            return
-        fi
+    if panic_is_inhibited; then
+        logger -t panic -s "action inhibited (caused by $1)"
+        return
     fi
     
     if [[ "${OS_DEBUG}" == true ]]; then
@@ -45,6 +53,11 @@ panic_action() {
         sleep ${delay}
     fi
 
+    if panic_is_inhibited; then
+        logger -t panic -s "action inhibited (caused by $1)"
+        return
+    fi
+    
     logger -t panic -s "rebooting (caused by $1)"
     /sbin/reboot
 }
