@@ -83,7 +83,6 @@ rm -f ${TARGET}/sbin/mkfs.bfs
 rm -f ${TARGET}/usr/bin/ipcrm
 rm -f ${TARGET}/usr/bin/ipcs
 rm -f ${TARGET}/sbin/mkswap
-rm -f ${TARGET}/usr/bin/renice
 rm -f ${TARGET}/sbin/swaplabel
 rm -f ${TARGET}/usr/bin/setsid
 rm -f ${TARGET}/sbin/blockdev
