@@ -56,7 +56,7 @@ case "$1" in
             fi
             
             msg_begin "Copying data overlay"
-            cp -pur /usr/share/dataoverlay/* /data
+            cp -pr /usr/share/dataoverlay/* /data
             sync
             msg_done
 
@@ -87,7 +87,7 @@ case "$1" in
         msg_done
 
         msg_begin "Copying data overlay"
-        cp -pur /usr/share/dataoverlay/* /data
+        cp -pr /usr/share/dataoverlay/* /data
         sync
         msg_done
         ;;
