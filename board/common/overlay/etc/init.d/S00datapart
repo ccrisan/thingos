@@ -55,11 +55,6 @@ case "$1" in
                 cat /tmp/fsck.log
             fi
             
-            msg_begin "Copying data overlay"
-            cp -pr /usr/share/dataoverlay/* /data
-            sync
-            msg_done
-
             exit 0
         fi
 
@@ -83,11 +78,6 @@ case "$1" in
 
         msg_begin "Copying data skeleton"
         cp -pur /usr/share/dataskel/* /data
-        sync
-        msg_done
-
-        msg_begin "Copying data overlay"
-        cp -pr /usr/share/dataoverlay/* /data
         sync
         msg_done
         ;;
