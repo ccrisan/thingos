@@ -80,6 +80,8 @@ DD_PID_FILE=${FW_DIR}/dd.pid
 BOOT_LOOP="/dev/loop3"
 ROOT_LOOP="/dev/loop4"
 
+boot_mounted_rw=false
+
 source ${OS_CONF_FILE}
 source ${SYS_VERSION_FILE}
 
@@ -99,7 +101,15 @@ function cleanup_on_exit() {
     losetup -d ${BOOT_LOOP} 2>/dev/null
     losetup -d ${ROOT_LOOP} 2>/dev/null
 
-    mount -T /tmp/fstab.disk -o ro /boot 2>/dev/null
+    if [[ ${boot_mounted_rw} == true ]]; then
+        mount -T /tmp/fstab.disk -o ro /boot 2>/dev/null
+    fi
+    
+    # remove *started files since corresponding processes have normally exited
+    rm -f ${DOWNLOAD_STARTED_FILE}
+    rm -f ${EXTRACT_STARTED_FILE}
+    rm -f ${FLASH_BOOT_STARTED_FILE}
+    rm -f ${FLASH_REBOOT_STARTED_FILE}
 }
 
 
@@ -244,6 +254,8 @@ function do_download() {
     touch ${DOWNLOAD_STARTED_FILE}
 
     echo "downloading..."
+    
+    trap cleanup_on_exit EXIT
 
     # Look for local file first
     if [[ -f "$1" ]]; then
@@ -304,7 +316,7 @@ function do_download() {
     pid=$!
     echo ${pid} > ${CURL_PID_FILE}
 
-    set +e  # don't exit on error just yet
+    set +e  # don't exit on error
     wait ${pid}
 
     if [[ "$?" != 0 ]]; then
@@ -464,6 +476,7 @@ function do_flash_boot() {
     wait ${pid}
 
     mount -T /tmp/fstab.disk -o rw /boot
+    boot_mounted_rw=true
 
     # the /usr/libexec/fw-restore-boot-cfg script, if present, takes the old (backup) boot dir as argument
     # and should restore any /boot configuration that needs to be preserved across updates
@@ -499,6 +512,7 @@ function do_flash_reboot() {
     # make the necessary changes to the current boot configuration so that
     # the firmware update initramfs will be used by the next boot
     mount -o remount,rw /boot
+    boot_mounted_rw=true
     if [[ -x /usr/libexec/fw-prepare-boot ]]; then
         /usr/libexec/fw-prepare-boot
     fi
