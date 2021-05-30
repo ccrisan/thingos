@@ -14,10 +14,9 @@ GOVERNOR_DIR="/sys/devices/system/cpu/cpufreq/${CPU_FREQ_GOVERNOR}"
 
 test -n "${OS_VERSION}" || source /etc/init.d/base
 
-prepare_conf ${CONF} ${SYS_CONF} ${BOOT_CONF}
-
-
 configure() {
+    test -s ${SYS_CONF} && source ${SYS_CONF}
+    test -s ${BOOT_CONF} && source ${BOOT_CONF}
     test -s ${CONF} && source ${CONF}
 
     echo ${CPU_FREQ_GOVERNOR} > ${CPU_FREQ_DIR}/scaling_governor
