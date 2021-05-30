@@ -1,0 +1,53 @@
+#!/bin/bash
+
+SYS_CONF="/etc/cpufreq.conf"
+BOOT_CONF="/boot/cpufreq.conf"
+CONF="/data/etc/cpufreq.conf"
+
+CPU_FREQ_GOVERNOR="ondemand"
+CPU_FREQ_MIN=""
+CPU_FREQ_MAX=""
+
+CPU_FREQ_DIR="/sys/devices/system/cpu/cpu0/cpufreq"
+GOVERNOR_DIR="/sys/devices/system/cpu/cpufreq/${CPU_FREQ_GOVERNOR}"
+
+
+test -n "${OS_VERSION}" || source /etc/init.d/base
+
+prepare_conf ${CONF} ${SYS_CONF} ${BOOT_CONF}
+
+
+configure() {
+    test -s ${CONF} && source ${CONF}
+
+    echo ${CPU_FREQ_GOVERNOR} > ${CPU_FREQ_DIR}/scaling_governor
+    if [[ ${CPU_FREQ_GOVERNOR} == "ondemand" ]]; then
+        echo 50 > ${GOVERNOR_DIR}/up_threshold
+        echo 100000 > ${GOVERNOR_DIR}/sampling_rate
+        echo 50 > ${GOVERNOR_DIR}/sampling_down_factor
+    fi
+    if [[ -n "${CPU_FREQ_MIN}" ]]; then
+        echo ${CPU_FREQ_MIN} > ${CPU_FREQ_DIR}/scaling_min_freq
+    fi
+    if [[ -n "${CPU_FREQ_MAX}" ]]; then
+        echo ${CPU_FREQ_MAX} > ${CPU_FREQ_DIR}/scaling_max_freq
+    fi
+}
+
+case "$1" in
+    start)
+        msg_begin "Configuring CPU frequency"
+        configure
+        test $? == 0 && msg_done || msg_fail
+        ;;
+
+    stop)
+        true
+        ;;
+
+    *)
+        echo $"Usage: $0 {start}"
+        exit 1
+esac
+
+exit $?
