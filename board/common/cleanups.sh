@@ -58,7 +58,6 @@ rm -f ${TARGET}/usr/bin/colrm
 rm -f ${TARGET}/usr/sbin/addpart
 rm -f ${TARGET}/sbin/blkdiscard
 rm -f ${TARGET}/usr/sbin/delpart
-rm -f ${TARGET}/usr/bin/column
 rm -f ${TARGET}/sbin/swapon
 rm -f ${TARGET}/usr/sbin/resizepart
 rm -f ${TARGET}/usr/bin/hexdump
