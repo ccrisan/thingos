@@ -1,0 +1,38 @@
+#!/bin/bash
+
+SYS_CONF="/etc/ifalias.conf"
+BOOT_CONF="/boot/ifalias.conf"
+CONF="/data/etc/ifalias.conf"
+
+
+test -n "${OS_VERSION}" || source /etc/init.d/base
+
+start() {
+    msg_begin "Renaming network interfaces"
+    test -s ${SYS_CONF} && source ${SYS_CONF}
+    test -s ${CONF} && source ${CONF}
+    test -s ${BOOT_CONF} && source ${BOOT_CONF}
+    
+    ifaces=$(ls /sys/class/net 2>/dev/null)
+    test -z "${ifaces}" && return
+    
+    for iface in /sys/class/net/*; do
+        iface=$(basename ${iface})
+        test -z "${!iface}" && continue
+        ip link set ${iface} name ${!iface}
+    done
+    msg_done
+}
+
+case "$1" in
+    start)
+        start
+        ;;
+        
+    stop)
+        ;;
+        
+    *)
+        echo "Usage: $0 {start}"
+        exit 1
+esac
