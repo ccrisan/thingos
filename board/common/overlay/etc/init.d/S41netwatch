@@ -3,6 +3,7 @@
 CONF="/etc/watch.conf"
 
 
+test -s ${CONF} || exit 0
 source ${CONF}
 
 test -n "${NETWATCH_HOST}" || exit 0
@@ -32,17 +33,25 @@ watch() {
     done
 }
 
+start() {
+    msg_begin "Starting netwatch"
+    watch &
+    msg_done
+}
+
+stop() {
+    msg_begin "Stopping netwatch"
+    ps | grep netwatch | grep -v $$ | grep -v grep | tr -s ' ' | sed -e 's/^\s//' | cut -d ' ' -f 1 | xargs -r kill
+    msg_done
+}
+
 case "$1" in
     start)
-        msg_begin "Starting netwatch"
-        watch &
-        msg_done
+        start
         ;;
 
     stop)
-        msg_begin "Stopping netwatch"
-        ps | grep netwatch | grep -v $$ | grep -v grep | tr -s ' ' | sed -e 's/^\s//' | cut -d ' ' -f 1 | xargs -r kill
-        msg_done
+        stop
         ;;
 
     restart)
