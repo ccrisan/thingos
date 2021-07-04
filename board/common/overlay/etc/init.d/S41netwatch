@@ -1,14 +1,8 @@
 #!/bin/bash
 
-CONF="/data/etc/watch.conf"
-NETWATCH_RETRIES=3
-NETWATCH_TIMEOUT=5
-NETWATCH_INTERVAL=20
+CONF="/etc/watch.conf"
 
 
-# watch configuration is already prepared by wifi init script
-
-test -s ${CONF} || exit 0
 source ${CONF}
 
 test -n "${NETWATCH_HOST}" || exit 0
@@ -62,4 +56,3 @@ case "$1" in
 esac
 
 exit $?
-

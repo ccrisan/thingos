@@ -7,9 +7,7 @@ CONF="/data/etc/hostapd.conf"
 LOG="/var/log/hostapd.log"
 PROG="/usr/sbin/hostapd"
 
-WATCH_CONF="/data/etc/watch.conf"
-
-LINK_WATCH=true
+WATCH_CONF="/etc/watch.conf"
 
 
 test -x ${PROG} || exit 0
@@ -18,7 +16,7 @@ test -n "${OS_VERSION}" || source /etc/init.d/base
 
 prepare_conf ${CONF} ${SYS_CONF} ${BOOT_CONF}
 
-test -s ${WATCH_CONF} && source ${WATCH_CONF}
+source ${WATCH_CONF}
 
 
 running() {

@@ -7,7 +7,7 @@ CONF="/data/etc/ppp"
 PROG="/usr/sbin/pppd"
 PROVIDER="mobile"
 
-WATCH_CONF="/data/etc/watch.conf"
+WATCH_CONF="/etc/watch.conf"
 
 CONNMAN_CONF="/etc/connman/main.conf"
 
