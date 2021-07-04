@@ -106,14 +106,11 @@ rm -f ${TARGET}/usr/sbin/fdformat
 rm -f ${TARGET}/usr/bin/linux32
 rm -f ${TARGET}/usr/bin/linux64
 rm -f ${TARGET}/usr/bin/uname26
-rm -f ${TARGET}/bin/zcat
 rm -f ${TARGET}/bin/zcmp
 rm -f ${TARGET}/bin/zdiff
 rm -f ${TARGET}/bin/zegrep
 rm -f ${TARGET}/bin/zfgrep
 rm -f ${TARGET}/bin/zforce
-rm -f ${TARGET}/bin/zgrep
-rm -f ${TARGET}/bin/zless
 rm -f ${TARGET}/bin/zmore
 rm -f ${TARGET}/bin/znew
 rm -f ${TARGET}/bin/gzexe
