@@ -1,0 +1,18 @@
+#!/bin/bash
+
+source /etc/init.d/panic
+
+
+if ! [[ -s ${PANIC_DETAILS_FILE} ]]; then
+    echo "No panic recent"
+    exit
+fi
+
+source ${PANIC_DETAILS_FILE}
+
+(
+    echo "Service:|${service}"
+    echo "Message:|${message}"
+    echo "Date:|$(date -D%s -d ${timestamp})"
+    echo "Uptime:|${uptime} seconds"
+) | column -t -s '|'

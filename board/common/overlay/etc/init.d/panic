@@ -4,6 +4,7 @@ PANIC_REBOOT_DELAY_FACTOR=10
 PANIC_REBOOT_DELAY_MAX=3600  # reboot at least once an hour in case of panic
 PANIC_INHIBIT_FILE="/var/run/panic_inhibit"
 PANIC_INHIBIT_TIMEOUT=3600  # inhibit panic action for at most one hour
+PANIC_DETAILS_FILE="/var/lib/last_panic"
 
 test -n "${OS_DEBUG}" || source /etc/init.d/os_conf
 
@@ -37,6 +38,13 @@ panic_action() {
     fi
     
     logger -t $1 -s "$2"
+    
+    (
+        echo "service=\"$1\""
+        echo "message=\"$2\""
+        echo "timestamp=\"$(date +%s)\""
+        echo "uptime=\"$(cat /proc/uptime | grep -oE '^[[:digit:]]+')\""
+    ) > ${PANIC_DETAILS_FILE}
     
     if panic_is_inhibited; then
         logger -t panic -s "action inhibited (caused by $1)"
