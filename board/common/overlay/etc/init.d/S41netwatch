@@ -1,12 +1,7 @@
 #!/bin/bash
 
-CONF="/data/etc/watch.conf"
-NETWATCH_RETRIES=3
-NETWATCH_TIMEOUT=5
-NETWATCH_INTERVAL=20
+CONF="/etc/watch.conf"
 
-
-# watch configuration is already prepared by wifi init script
 
 test -s ${CONF} || exit 0
 source ${CONF}
@@ -32,24 +27,31 @@ watch() {
                 count=$((${count} + 1))
                 continue
             else
-                logger -t netwatch "cannot connect to ${NETWATCH_HOST}:${NETWATCH_PORT}, calling panic action"
-                panic_action netwatch
+                panic_action netwatch "cannot connect to ${NETWATCH_HOST}:${NETWATCH_PORT}"
             fi
         fi
     done
 }
 
+start() {
+    msg_begin "Starting netwatch"
+    watch &
+    msg_done
+}
+
+stop() {
+    msg_begin "Stopping netwatch"
+    ps | grep netwatch | grep -v $$ | grep -v grep | tr -s ' ' | sed -e 's/^\s//' | cut -d ' ' -f 1 | xargs -r kill
+    msg_done
+}
+
 case "$1" in
     start)
-        msg_begin "Starting netwatch"
-        watch &
-        msg_done
+        start
         ;;
 
     stop)
-        msg_begin "Stopping netwatch"
-        ps | grep netwatch | grep -v $$ | grep -v grep | tr -s ' ' | sed -e 's/^\s//' | cut -d ' ' -f 1 | xargs -r kill
-        msg_done
+        stop
         ;;
 
     restart)
@@ -63,4 +65,3 @@ case "$1" in
 esac
 
 exit $?
-

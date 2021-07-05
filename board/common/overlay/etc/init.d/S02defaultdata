@@ -25,12 +25,20 @@ set_utc_timezone() {
     msg_done
 }
 
+copy_data_overlay() {
+    msg_begin "Copying data overlay"
+    cp -pr /usr/share/dataoverlay/* /data
+    sync
+    msg_done
+}
+
 
 case "$1" in
     start)
         test -s /data/etc/shadow || set_empty_root_passwd
         test -s /data/etc/version || copy_version
         test -s /data/etc/localtime || set_utc_timezone
+        copy_data_overlay
         ;;
 
     stop)

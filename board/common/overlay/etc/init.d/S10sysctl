@@ -5,6 +5,7 @@ BOOT_CONF="/boot/sysctl.conf"
 CONF="/data/etc/sysctl.conf"
 
 PROG="/sbin/sysctl"
+FIRST_RUN_FILE="/var/run/sysctl_run"
 
 
 test -n "${OS_VERSION}" || source /etc/init.d/base
@@ -16,10 +17,18 @@ fi
 
 case "$1" in
     start)
-        msg_begin "Applying sysctl parameters"
-        test -s ${SYS_CONF} && sysctl -q -p ${SYS_CONF}
-        test -s ${CONF} && sysctl -q -p ${CONF}
-        test -s ${BOOT_CONF} && sysctl -q -p ${BOOT_CONF}
+        if [[ -f ${FIRST_RUN_FILE} ]]; then
+            msg_begin "Applying sysctl parameters (final)"
+            test -s ${SYS_CONF} && sysctl -q -p ${SYS_CONF}
+            test -s ${CONF} && sysctl -q -p ${CONF}
+            test -s ${BOOT_CONF} && sysctl -q -p ${BOOT_CONF}
+        else
+            msg_begin "Applying sysctl parameters"
+            test -s ${SYS_CONF} && sysctl -e -q -p ${SYS_CONF}
+            test -s ${CONF} && sysctl -e -q -p ${CONF}
+            test -s ${BOOT_CONF} && sysctl -e -q -p ${BOOT_CONF}
+            touch ${FIRST_RUN_FILE}
+        fi
         msg_done
         ;;
 
@@ -33,4 +42,3 @@ case "$1" in
 esac
 
 exit $?
-

@@ -40,6 +40,9 @@ start() {
         done
         test $? == 0 && msg_done || msg_fail
     fi
+    
+    # adjust any existing client keys permissions
+    chmod go-rwx ${USER_DIR}/id_rsa* 2>/dev/null
 
     msg_begin "Starting sshd"
     

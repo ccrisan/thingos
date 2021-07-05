@@ -13,6 +13,8 @@ SYS_NTP_CONF="/etc/ntp.conf"
 BOOT_NTP_CONF="/boot/ntp.conf"
 NTP_CONF="/data/etc/ntp.conf"
 
+SAVED_DATE_FILE="/var/lib/saved_date"
+
 
 test -n "${OS_VERSION}" || source /etc/init.d/base
 
@@ -130,6 +132,9 @@ stop_ntp() {
 }
 
 start() {
+    # Load saved date first
+    test -s ${SAVED_DATE_FILE} && date -s $(cat ${SAVED_DATE_FILE}) -D%s >/dev/null
+
     if [[ "${DATE_METHOD}" == "http" ]]; then
         start_http
     else # ntp or sntp
@@ -144,7 +149,10 @@ stop() {
         stop_http
     else # ntp or sntp
         stop_ntp
-    fi        
+    fi
+    
+    # Save current date to disk for next time
+    date +%s > ${SAVED_DATE_FILE}
 }
 
 case "$1" in

@@ -54,6 +54,7 @@ case "$1" in
                 msg_fail
                 cat /tmp/fsck.log
             fi
+            
             exit 0
         fi
 

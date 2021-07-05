@@ -8,16 +8,16 @@ LOG="/var/log/wpa_supplicant.log"
 PROG="/usr/sbin/wpa_supplicant"
 DRIVER=nl80211,wext
 
-SYS_WATCH_CONF="/etc/watch.conf"
-BOOT_WATCH_CONF="/boot/watch.conf"
-WATCH_CONF="/data/etc/watch.conf"
+WATCH_CONF="/etc/watch.conf"
+
+CONNMAN_CONF="/etc/connman/main.conf"
 
 
 test -x ${PROG} || exit 0
+test -s ${CONNMAN_CONF} && exit 0
 
 test -n "${OS_VERSION}" || source /etc/init.d/base
 
-prepare_conf ${WATCH_CONF} ${SYS_WATCH_CONF} ${BOOT_WATCH_CONF}
 source ${WATCH_CONF}
 
 prepare_conf ${CONF} ${SYS_CONF} ${BOOT_CONF}
@@ -44,8 +44,7 @@ watch() {
                 count=$((${count} + 5))
                 logger -t wifi "disconnected"
             else
-                logger -t wifi "disconnected for ${LINK_WATCH_TIMEOUT} seconds, calling panic action"
-                panic_action wifi
+                panic_action wifi "disconnected for ${LINK_WATCH_TIMEOUT} seconds"
             fi
         fi
     done

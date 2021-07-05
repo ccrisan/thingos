@@ -22,12 +22,12 @@ test -n "${OS_VERSION}" || source /etc/init.d/base
 function start() {
     if [[ "$(cat /proc/device-tree/aliases/uart0)" = "$(cat /proc/device-tree/aliases/serial1)" ]] ; then
         if [[ "$(wc -c /proc/device-tree/soc/gpio@7e200000/uart0_pins/brcm\,pins | cut -f 1 -d ' ')" = "16" ]]; then
-            /usr/bin/hciattach -t 10 /dev/serial1 bcm43xx 3000000 flow - &>/dev/null
+            /usr/bin/btattach -B /dev/serial1 -P bcm -S 3000000 &>/dev/null
         else
-            /usr/bin/hciattach -t 10 /dev/serial1 bcm43xx 921600 noflow - &>/dev/null
+            /usr/bin/btattach -B /dev/serial1 -P bcm -S 921600 -N &>/dev/null
         fi
     else
-        /usr/bin/hciattach -t 10 /dev/serial1 bcm43xx 460800 noflow - &>/dev/null
+        /usr/bin/btattach -B /dev/serial1 -P bcm -S 460800 -N &>/dev/null
     fi
 }
 
@@ -40,7 +40,7 @@ case "$1" in
 
     stop)
         msg_begin "Detaching UART bluetooth device"
-        killall hciattach &>/dev/null
+        killall btattach &>/dev/null
         test $? == 0 && msg_done || msg_fail
         ;;
 

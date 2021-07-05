@@ -1,7 +1,7 @@
 #!/bin/sh
 
 BOOT_LOG=/var/log/boot.log
-PID_FILE=/tmp/rc.pid
+PID_FILE=/tmp/rcK.pid
 
 source /etc/init.d/base
 

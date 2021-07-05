@@ -1,0 +1,7 @@
+config BR2_PACKAGE_PYTHON_BASE58
+	bool "python-base58"
+	depends on BR2_PACKAGE_PYTHON3
+	help
+	  Base58 and Base58Check implementation compatible with what is used by the bitcoin network.
+
+	  https://github.com/keis/base58

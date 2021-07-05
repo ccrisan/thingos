@@ -1,22 +1,30 @@
 #!/bin/bash
 
 SYS_CONF="/etc/firewall.sh"
+USER_CONF="/data/etc/firewall.sh"
 BOOT_CONF="/boot/firewall.sh"
-CONF="/data/etc/firewall.sh"
 
 
 test -n "${OS_VERSION}" || source /etc/init.d/base
 
-prepare_conf ${CONF} ${SYS_CONF} ${BOOT_CONF}
-test -s ${CONF} || exit 0
+test -s ${SYS_CONF} || test -s ${USER_CONF} || test -s ${BOOT_CONF} || exit 0
 
 
 start() {
     msg_begin "Starting firewall"
 
-    bash ${CONF}  
+    ok=true
+    if [[ -s ${SYS_CONF} ]]; then
+        bash ${SYS_CONF} || ok=false
+    fi
+    if [[ -s ${USER_CONF} ]]; then
+        bash ${USER_CONF} || ok=false
+    fi
+    if [[ -s ${BOOT_CONF} ]]; then
+        bash ${BOOT_CONF} || ok=false
+    fi
 
-    test $? == 0 && msg_done || msg_fail
+    test ${ok} == true && msg_done || msg_fail
 }
 
 case "$1" in

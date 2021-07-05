@@ -7,10 +7,7 @@ CONF="/data/etc/hostapd.conf"
 LOG="/var/log/hostapd.log"
 PROG="/usr/sbin/hostapd"
 
-WATCH_CONF="/data/etc/watch.conf"
-
-LINK_WATCH=yes
-LINK_WATCH_TIMEOUT=20
+WATCH_CONF="/etc/watch.conf"
 
 
 test -x ${PROG} || exit 0
@@ -19,19 +16,18 @@ test -n "${OS_VERSION}" || source /etc/init.d/base
 
 prepare_conf ${CONF} ${SYS_CONF} ${BOOT_CONF}
 
-test -s ${WATCH_CONF} && source ${WATCH_CONF}
+source ${WATCH_CONF}
 
 
 running() {
-    killall -0 hostapd &> /dev/null
+    killall -0 $(basename ${PROG}) &> /dev/null
 }
 
 watch() {
     while true; do
         sleep 5
         if ! running; then
-            logger -t hostapd "dead, calling panic action"
-            panic_action hostapd
+            panic_action hostapd "service dead"
             break
         fi
     done
@@ -70,7 +66,7 @@ start_hostapd() {
     iwconfig ${iface} power off &> /dev/null
     ${PROG} ${CONF} &> ${LOG} &
 
-    if [[ "${LINK_WATCH}" == "yes" ]]; then
+    if [[ "${LINK_WATCH}" == "true" ]]; then
         watch &
     fi
 
@@ -79,8 +75,8 @@ start_hostapd() {
 
 stop_hostapd() {
     msg_begin "Stopping hostpad"
-    killall hostapd &>/dev/null
-    ps | grep hostapd | grep -v $$ | grep -v grep | tr -s ' ' | sed -e 's/^\s//' | cut -d ' ' -f 1 | xargs -r kill
+    killall $(basename ${PROG}) &>/dev/null
+    ps | grep $(basename ${PROG}) | grep -v $$ | grep -v grep | tr -s ' ' | sed -e 's/^\s//' | cut -d ' ' -f 1 | xargs -r kill
     msg_done
 }
 

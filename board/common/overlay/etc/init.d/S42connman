@@ -1,0 +1,82 @@
+#!/bin/bash
+
+CONF="/etc/connman/main.conf"
+PROG="/usr/sbin/connmand"
+PROG_WO="/usr/sbin/connmand-wait-online"
+LOG="/var/log/connman.log"
+LIB_DIR="/var/lib/connman"
+RUN_DIR="/var/run/connman"
+ONLINE_TIMEOUT=20
+ONLINE_TIMEOUT_INITIAL=10
+ONLINE_TIMEOUT_CHECK=5
+ONLINE_HANDLER_SCRIPT="/usr/libexec/connman-online-handler"
+
+
+test -x ${PROG} || exit 0
+test -s ${CONF} || exit 0
+
+test -n "${OS_VERSION}" || source /etc/init.d/base
+
+watch_online() {
+    is_online=false
+    while true; do
+        ${PROG_WO} --timeout=${ONLINE_TIMEOUT_CHECK} &>/dev/null
+        if [[ $? == 0 ]]; then
+            if [[ ${is_online} == false ]]; then
+                ${ONLINE_HANDLER_SCRIPT} true
+                is_online=true
+            fi
+        else
+            if [[ ${is_online} == true ]]; then
+                ${ONLINE_HANDLER_SCRIPT} false
+                is_online=false
+            fi
+        fi
+    done
+}
+
+start() {
+    msg_begin "Starting connman"
+
+    mkdir -p ${RUN_DIR}
+    ln -sf ${RUN_DIR}/resolv.conf /tmp/resolv.conf
+
+    ifconfig lo up
+    ${PROG} -n -r &> ${LOG} &
+    if grep -qE '(Favorite)|(AutoConnect)=true' ${LIB_DIR}/*/settings 2>/dev/null; then
+        timeout=${ONLINE_TIMEOUT}
+    else
+        timeout=${ONLINE_TIMEOUT_INITIAL}
+    fi
+
+    test -x ${ONLINE_HANDLER_SCRIPT} && watch_online &> /var/log/online-handler.log &
+
+    ${PROG_WO} --timeout=${timeout}
+    test $? == 0 && msg_done || msg_fail
+}
+
+stop() {
+    msg_begin "Stopping connman"
+    killall -q $(basename ${PROG})
+    msg_done
+}
+
+
+case "$1" in
+    start)
+        start
+        ;;
+
+    stop)
+        stop
+        ;;
+
+    restart)
+        stop
+        start
+        ;;
+
+    *)
+        echo "Usage: $0 {start|stop|restart}"
+        exit 1
+esac

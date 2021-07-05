@@ -1,7 +1,7 @@
 #!/bin/bash
 
 DH_CONF="/var/cache/dhclient.conf"
-WATCH_CONF="/data/etc/watch.conf"
+WATCH_CONF="/etc/watch.conf"
 
 SYS_STATIC_CONF="/etc/static_ip.conf"
 BOOT_STATIC_CONF="/boot/static_ip.conf"
@@ -11,8 +11,12 @@ SYS_INTERFACES_CONF="/etc/network/interfaces"
 BOOT_INTERFACES_CONF="/boot/network/interfaces"
 INTERFACES_CONF="/data/etc/network/interfaces"
 
+CONNMAN_CONF="/etc/connman/main.conf"
+
 LINK_NEGO_TIMEOUT=10
 
+
+test -s ${CONNMAN_CONF} && exit 0
 
 test -n "${OS_VERSION}" || source /etc/init.d/base
 
@@ -35,10 +39,9 @@ watch_eth() {
         else
             if [[ ${count} -lt ${LINK_WATCH_TIMEOUT} ]]; then
                 count=$((${count} + 5))
-                logger -t ethernet "disconnected"
+                logger -t network "ethernet disconnected"
             else
-                logger -t ethernet "disconnected for ${LINK_WATCH_TIMEOUT} seconds, calling panic action"
-                panic_action network
+                panic_action network "ethernet disconnected for ${LINK_WATCH_TIMEOUT} seconds"
             fi
         fi
     done
@@ -56,8 +59,7 @@ watch_ip() {
                 count=$((${count} + 5))
                 logger -t network "${iface} has no IP address"
             else
-                logger -t network "${iface} had no IP address for ${IP_WATCH_TIMEOUT} seconds, calling panic action"
-                panic_action network
+                panic_action network "${iface} had no IP address for ${IP_WATCH_TIMEOUT} seconds"
             fi
         fi
     done
@@ -199,8 +201,7 @@ start() {
 
     if [[ "${eth_ok}" != "ok" ]] && [[ "${wlan_ok}" != "ok" ]] && [[ "${ppp_ok}" != "ok" ]]; then
         if [[ "${LINK_WATCH}" == "true" ]]; then
-            logger -t network "no network connection available, calling panic action"
-            panic_action network
+            panic_action network "no network connection available"
             return 1
         else
             logger -t network "no network connection available"
@@ -237,8 +238,7 @@ start() {
     def_route_ok=$(ip route get 1.1.1.1 &>/dev/null && echo "ok")
     if [[ "${def_route_ok}" != "ok" ]]; then
         if [[ "${IP_WATCH}" == "true" ]]; then
-            logger -t network "no default route, calling panic action"
-            panic_action network
+            panic_action network "no default route"
             return 1
         else
             logger -t network "no default route"

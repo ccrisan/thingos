@@ -1,0 +1,84 @@
+#!/bin/bash
+
+SYS_CONF="/etc/openvpn"
+BOOT_CONF="/boot/openvpn"
+CONF="/data/etc/openvpn"
+
+LOG="/var/log/openvpn.log"
+PROG="/usr/sbin/openvpn"
+
+WATCH_CONF="/etc/watch.conf"
+
+
+test -x ${PROG} || exit 0
+
+test -n "${OS_VERSION}" || source /etc/init.d/base
+
+prepare_conf ${CONF} ${SYS_CONF} ${BOOT_CONF}
+
+source ${WATCH_CONF}
+
+test -d ${CONF} || exit 0
+
+
+running() {
+    killall -0 openvpn &> /dev/null
+}
+
+watch() {
+    count=0
+    NETWATCH_RETRIES=$((${NETWATCH_RETRIES} - 1))
+    while true; do
+        sleep ${NETWATCH_INTERVAL}
+        if running; then
+            count=0
+        else
+            if [[ ${count} -lt ${NETWATCH_RETRIES} ]]; then
+                logger -t openvpn "dead"
+                count=$((${count} + 1))
+                continue
+            else
+                panic_action openvpn "service dead"
+                break
+            fi
+        fi
+    done
+}
+
+start() {
+    msg_begin "Starting openvpn"
+    modprobe tun
+
+    ${PROG} --config ${CONF}/client.conf --cd ${CONF} &>>/var/log/openvpn.log &
+    test $? == 0 && msg_done || msg_fail
+    
+    if [[ "${LINK_WATCH}" == "true" ]]; then
+        watch &
+    fi
+}
+
+stop() {
+    msg_begin "Stopping openvpn"
+    killall $(basename ${PROG}) &>/dev/null
+    ps | grep $(basename ${PROG}) | grep -v $$ | grep -v grep | tr -s ' ' | sed -e 's/^\s//' | cut -d ' ' -f 1 | xargs -r kill
+    msg_done
+}
+
+case "$1" in
+    start)
+        start
+        ;;
+        
+    stop)
+        stop
+        ;;
+        
+    restart)
+        stop
+        start
+        ;;
+    
+    *)
+        echo "Usage: $0 {start|stop|restart}"
+        exit 1
+esac

@@ -4,7 +4,7 @@
 #
 ################################################################################
 
-RAUC_VERSION = 1.3
+RAUC_VERSION = 1.5
 RAUC_SITE = https://github.com/rauc/rauc/releases/download/v$(RAUC_VERSION)
 RAUC_SOURCE = rauc-$(RAUC_VERSION).tar.xz
 RAUC_LICENSE = LGPL-2.1
@@ -31,7 +31,7 @@ RAUC_DEPENDENCIES += systemd
 endif
 
 define RAUC_INSTALL_INIT_SYSTEMD
-	mkdir $(TARGET_DIR)/usr/lib/systemd/system/rauc.service.d
+	mkdir -p $(TARGET_DIR)/usr/lib/systemd/system/rauc.service.d
 	printf '[Install]\nWantedBy=multi-user.target\n' \
 		>$(TARGET_DIR)/usr/lib/systemd/system/rauc.service.d/buildroot-enable.conf
 endef
@@ -46,7 +46,8 @@ HOST_RAUC_CONF_OPTS += \
 	--disable-network \
 	--disable-json \
 	--disable-service \
-	--without-dbuspolicydir
+	--without-dbuspolicydir \
+	--with-systemdunitdir=no
 
 $(eval $(autotools-package))
 $(eval $(host-autotools-package))

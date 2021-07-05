@@ -22,7 +22,6 @@ rm -rf ${TARGET}/etc/fstab
 
 rm -f ${TARGET}/etc/rc_maps.cfg
 rm -f ${TARGET}/etc/udev/hwdb.d/20-pci-vendor-model.hwdb
-rm -f ${TARGET}/etc/hostname
 rm -f ${TARGET}/etc/os-release
 rm -f ${TARGET}/etc/hostapd.conf
 rm -f ${TARGET}/etc/timezone
@@ -59,7 +58,6 @@ rm -f ${TARGET}/usr/bin/colrm
 rm -f ${TARGET}/usr/sbin/addpart
 rm -f ${TARGET}/sbin/blkdiscard
 rm -f ${TARGET}/usr/sbin/delpart
-rm -f ${TARGET}/usr/bin/column
 rm -f ${TARGET}/sbin/swapon
 rm -f ${TARGET}/usr/sbin/resizepart
 rm -f ${TARGET}/usr/bin/hexdump
@@ -84,7 +82,6 @@ rm -f ${TARGET}/sbin/mkfs.bfs
 rm -f ${TARGET}/usr/bin/ipcrm
 rm -f ${TARGET}/usr/bin/ipcs
 rm -f ${TARGET}/sbin/mkswap
-rm -f ${TARGET}/usr/bin/renice
 rm -f ${TARGET}/sbin/swaplabel
 rm -f ${TARGET}/usr/bin/setsid
 rm -f ${TARGET}/sbin/blockdev
@@ -109,14 +106,11 @@ rm -f ${TARGET}/usr/sbin/fdformat
 rm -f ${TARGET}/usr/bin/linux32
 rm -f ${TARGET}/usr/bin/linux64
 rm -f ${TARGET}/usr/bin/uname26
-rm -f ${TARGET}/bin/zcat
 rm -f ${TARGET}/bin/zcmp
 rm -f ${TARGET}/bin/zdiff
 rm -f ${TARGET}/bin/zegrep
 rm -f ${TARGET}/bin/zfgrep
 rm -f ${TARGET}/bin/zforce
-rm -f ${TARGET}/bin/zgrep
-rm -f ${TARGET}/bin/zless
 rm -f ${TARGET}/bin/zmore
 rm -f ${TARGET}/bin/znew
 rm -f ${TARGET}/bin/gzexe
@@ -198,10 +192,8 @@ rm -f ${TARGET}/usr/bin/rds-ctl
 rm -f ${TARGET}/usr/bin/v4l2-compliance
 
 # unused python folders
-rm -rf ${TARGET}/usr/lib/python2.7/site-packages/samba/
-rm -rf ${TARGET}/usr/lib/python2.7/ensurepip/
-rm -rf ${TARGET}/usr/lib/python2.7/config/
-rm -rf ${TARGET}/usr/lib/python2.7/unittest/
+rm -rf ${TARGET}/usr/lib/python*/site-packages/samba/
+rm -rf ${TARGET}/usr/lib/python*/unittest/
 
 # buildroot default startup scripts
 rm -f ${TARGET}/etc/init.d/S01syslogd
@@ -217,6 +209,7 @@ rm -f ${TARGET}/etc/init.d/S50sshd
 rm -f ${TARGET}/etc/init.d/S50proftpd
 rm -f ${TARGET}/etc/init.d/S50postgresql
 rm -f ${TARGET}/etc/init.d/S50redis
+rm -f ${TARGET}/etc/init.d/S60openvpn
 rm -f ${TARGET}/etc/init.d/S80dhcp-relay
 rm -f ${TARGET}/etc/init.d/S80dhcp-server
 rm -f ${TARGET}/etc/init.d/S80dnsmasq

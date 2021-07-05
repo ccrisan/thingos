@@ -7,10 +7,13 @@ CONF="/data/etc/ppp"
 PROG="/usr/sbin/pppd"
 PROVIDER="mobile"
 
-WATCH_CONF="/data/etc/watch.conf"
+WATCH_CONF="/etc/watch.conf"
+
+CONNMAN_CONF="/etc/connman/main.conf"
 
 
 test -x ${PROG} || exit 0
+test -s ${CONNMAN_CONF} && exit 0
 
 test -n "${OS_VERSION}" || source /etc/init.d/base
 
@@ -39,8 +42,7 @@ watch() {
                 count=$((${count} + 5))
                 logger -t ppp "disconnected"
             else
-                logger -t ppp "disconnected for ${LINK_WATCH_TIMEOUT} seconds, calling panic action"
-                panic_action ppp
+                panic_action ppp "disconnected for ${LINK_WATCH_TIMEOUT} seconds"
             fi
         fi
     done

@@ -1,6 +1,6 @@
 #!/bin/bash
 
-SYS_HOSTNAME_FILE="/etc/hostname"
+SYS_HOSTNAME_FILE="/etc/defhostname"
 BOOT_HOSTNAME_FILE="/boot/hostname"
 HOSTNAME_FILE="/data/etc/hostname"
 

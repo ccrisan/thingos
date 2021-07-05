@@ -56,7 +56,7 @@ prepare_conf() {
 
     if [[ ! -e "${actual_conf}" && -e "${system_conf}" ]]; then
         mkdir -p $(dirname "${actual_conf}")
-        cp "${system_conf}" "${actual_conf}"
+        cp -rf "${system_conf}" "${actual_conf}"
     fi
 }
 
