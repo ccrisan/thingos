@@ -1,31 +1,70 @@
 #!/bin/bash
 
-DEV="/dev/watchdog"
+SYS_CONF="/etc/watchdog.conf"
+BOOT_CONF="/boot/watchdog.conf"
+USER_CONF="/data/etc/watchdog.conf"
 
 PROG="/sbin/watchdog"
-
+DEVICE="/dev/watchdog"
+TIMEOUT=5
+THERMAL_ZONE=
+MAX_TEMP=
+CHECK_TEMP_INTERVAL=10
 
 test -x ${PROG} || exit 0
-test -c ${DEV} || exit 0
+
+test -s ${SYS_CONF} && source ${SYS_CONF}
+test -s ${USER_CONF} && source ${USER_CONF}
+test -s ${BOOT_CONF} && source ${BOOT_CONF}
 
 test -n "${OS_VERSION}" || source /etc/init.d/base
 
 
+start_watchtemp() {
+    if [[ -z "${THERMAL_ZONE}" ]] || [[ -z "${MAX_TEMP}" ]]; then
+        return
+    fi
+    while true; do
+        sleep ${CHECK_TEMP_INTERVAL}
+        temp=$(cat /sys/class/thermal/${THERMAL_ZONE}/temp)
+        temp=$((temp / 1000))
+        if [[ "${temp}" -gt ${MAX_TEMP} ]]; then
+            panic_action watchdog "temperature too high: ${temp} > ${MAX_TEMP}"
+        fi
+    done
+}
+
+stop_watchtemp() {
+    ps | grep S13network | grep -v $$ | grep -v grep | tr -s ' ' | sed -e 's/^\s//' | cut -d ' ' -f 1 | xargs -r kill
+    ps | grep "service watchdog" | grep -v $$ | grep -v grep | tr -s ' ' | sed -e 's/^\s//' | cut -d ' ' -f 1 | xargs -r kill
+}
+
+start_watchdog() {
+    msg_begin "Starting watchdog"
+    ${PROG} -t ${TIMEOUT} ${DEVICE}
+    test $? == 0 && msg_done || msg_fail
+}
+
+stop_watchdog() {
+    msg_begin "Stopping watchdog"
+    killall -q $(basename ${PROG})
+    test $? == 0 && msg_done || msg_fail
+}
+
+
 case "$1" in
     start)
-        msg_begin "Starting watchdog"
-        ${PROG} -t 5 ${DEV}
-        test $? == 0 && msg_done || msg_fail
+        start_watchdog
+        start_watchtemp &
         ;;
-    
+
     stop)
         true
         ;;
 
     reallystop)
-        msg_begin "Stopping watchdog"
-        killall -q $(basename ${PROG})
-        test $? == 0 && msg_done || msg_fail
+        stop_watchdog
+        stop_watchtemp
         ;;
 
     *)
