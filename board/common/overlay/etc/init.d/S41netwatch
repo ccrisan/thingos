@@ -15,6 +15,8 @@ test "${OS_NETWORKLESS}" == "true" && exit 0
 
 
 watch() {
+    sleep ${NETWATCH_DELAY:-0}
+
     count=0
     NETWATCH_RETRIES=$((${NETWATCH_RETRIES} - 1))
     while true; do
