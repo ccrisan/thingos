@@ -7,7 +7,7 @@ CONF="/data/etc/openvpn"
 LOG="/var/log/openvpn.log"
 PROG="/usr/sbin/openvpn"
 
-WATCH_CONF="/etc/watch.conf"
+NETWATCH_CONF="/etc/netwatch.conf"
 
 
 test -x ${PROG} || exit 0
@@ -16,7 +16,7 @@ test -n "${OS_VERSION}" || source /etc/init.d/base
 
 prepare_conf ${CONF} ${SYS_CONF} ${BOOT_CONF}
 
-source ${WATCH_CONF}
+source ${NETWATCH_CONF}
 
 test -d ${CONF} || exit 0
 
@@ -26,14 +26,16 @@ running() {
 }
 
 watch() {
+    sleep ${NET_WATCH_DELAY}
+    
     count=0
-    NETWATCH_RETRIES=$((${NETWATCH_RETRIES} - 1))
+    NET_WATCH_RETRIES=$((${NET_WATCH_RETRIES} - 1))
     while true; do
-        sleep ${NETWATCH_INTERVAL}
+        sleep ${NET_WATCH_INTERVAL}
         if running; then
             count=0
         else
-            if [[ ${count} -lt ${NETWATCH_RETRIES} ]]; then
+            if [[ ${count} -lt ${NET_WATCH_RETRIES} ]]; then
                 logger -t openvpn "dead"
                 count=$((${count} + 1))
                 continue

@@ -58,10 +58,8 @@ rm -f ${TARGET}/usr/bin/colrm
 rm -f ${TARGET}/usr/sbin/addpart
 rm -f ${TARGET}/sbin/blkdiscard
 rm -f ${TARGET}/usr/sbin/delpart
-rm -f ${TARGET}/sbin/swapon
 rm -f ${TARGET}/usr/sbin/resizepart
 rm -f ${TARGET}/usr/bin/hexdump
-rm -f ${TARGET}/sbin/swapoff
 rm -f ${TARGET}/usr/bin/rev
 rm -f ${TARGET}/sbin/chcpu
 rm -f ${TARGET}/usr/bin/tailf
@@ -81,8 +79,6 @@ rm -f ${TARGET}/usr/bin/ipcmk
 rm -f ${TARGET}/sbin/mkfs.bfs
 rm -f ${TARGET}/usr/bin/ipcrm
 rm -f ${TARGET}/usr/bin/ipcs
-rm -f ${TARGET}/sbin/mkswap
-rm -f ${TARGET}/sbin/swaplabel
 rm -f ${TARGET}/usr/bin/setsid
 rm -f ${TARGET}/sbin/blockdev
 rm -f ${TARGET}/usr/bin/cytune

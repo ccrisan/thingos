@@ -1,7 +1,7 @@
 #!/bin/bash
 
 DH_CONF="/var/cache/dhclient.conf"
-WATCH_CONF="/etc/watch.conf"
+NETWATCH_CONF="/etc/netwatch.conf"
 
 SYS_STATIC_CONF="/etc/static_ip.conf"
 BOOT_STATIC_CONF="/boot/static_ip.conf"
@@ -20,7 +20,7 @@ test -s ${CONNMAN_CONF} && exit 0
 
 test -n "${OS_VERSION}" || source /etc/init.d/base
 
-source ${WATCH_CONF}
+source ${NETWATCH_CONF}
 
 prepare_conf ${STATIC_CONF} ${SYS_STATIC_CONF} ${BOOT_STATIC_CONF}
 test -r ${STATIC_CONF} && source ${STATIC_CONF}

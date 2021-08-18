@@ -7,7 +7,7 @@ CONF="/data/etc/ppp"
 PROG="/usr/sbin/pppd"
 PROVIDER="mobile"
 
-WATCH_CONF="/etc/watch.conf"
+NETWATCH_CONF="/etc/netwatch.conf"
 
 CONNMAN_CONF="/etc/connman/main.conf"
 
@@ -22,7 +22,7 @@ prepare_conf ${CONF} ${SYS_CONF} ${BOOT_CONF}
 test -e ${CONF}/modem || exit 0
 test -e ${CONF}/apn || exit 0
 
-source ${WATCH_CONF}
+source ${NETWATCH_CONF}
 
 test "${OS_NETWORKLESS}" == "true" && exit 0
 

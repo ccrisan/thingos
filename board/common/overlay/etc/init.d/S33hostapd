@@ -7,7 +7,7 @@ CONF="/data/etc/hostapd.conf"
 LOG="/var/log/hostapd.log"
 PROG="/usr/sbin/hostapd"
 
-WATCH_CONF="/etc/watch.conf"
+NETWATCH_CONF="/etc/netwatch.conf"
 
 
 test -x ${PROG} || exit 0
@@ -16,7 +16,7 @@ test -n "${OS_VERSION}" || source /etc/init.d/base
 
 prepare_conf ${CONF} ${SYS_CONF} ${BOOT_CONF}
 
-source ${WATCH_CONF}
+source ${NETWATCH_CONF}
 
 
 running() {
