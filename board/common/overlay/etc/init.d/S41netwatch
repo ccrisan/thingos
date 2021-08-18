@@ -1,6 +1,6 @@
 #!/bin/bash
 
-CONF="/etc/watch.conf"
+CONF="/etc/netwatch.conf"
 
 
 test -s ${CONF} || exit 0

@@ -8,7 +8,7 @@ LOG="/var/log/wpa_supplicant.log"
 PROG="/usr/sbin/wpa_supplicant"
 DRIVER=nl80211,wext
 
-WATCH_CONF="/etc/watch.conf"
+NETWATCH_CONF="/etc/netwatch.conf"
 
 CONNMAN_CONF="/etc/connman/main.conf"
 
@@ -18,7 +18,7 @@ test -s ${CONNMAN_CONF} && exit 0
 
 test -n "${OS_VERSION}" || source /etc/init.d/base
 
-source ${WATCH_CONF}
+source ${NETWATCH_CONF}
 
 prepare_conf ${CONF} ${SYS_CONF} ${BOOT_CONF}
 test -s ${CONF} || exit 0
