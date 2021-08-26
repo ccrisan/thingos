@@ -55,6 +55,6 @@ fi
 # adjust root password
 if [[ -n "${THINGOS_ROOT_PASSWORD_HASH}" ]] && [[ -f ${TARGET}/etc/shadow ]]; then
     echo "Updating root password hash"
-    sed -ri "s/root:[^:]+:/root:${THINGOS_ROOT_PASSWORD_HASH}:/" ${TARGET}/etc/shadow
-    sed -ri "s/admin:[^:]+:/admin:${THINGOS_ROOT_PASSWORD_HASH}:/" ${TARGET}/etc/shadow
+    sed -ri "s,root:[^:]+:,root:${THINGOS_ROOT_PASSWORD_HASH}:," ${TARGET}/etc/shadow
+    sed -ri "s,admin:[^:]+:,admin:${THINGOS_ROOT_PASSWORD_HASH}:," ${TARGET}/etc/shadow
 fi
