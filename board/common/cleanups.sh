@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 if [ -z "${TARGET}" ]; then
     echo "this script must be invoked from postscript.sh"
