@@ -42,6 +42,7 @@ SYS_BOARD_FILE=/etc/board
 OS_CONF_FILE=/etc/init.d/os_conf
 
 MIN_FREE_DISK=500  # MB
+DISK_CLEANUP_SCRIPT=/usr/libexec/disk-cleanup
 FW_DIR=/data/.fwupdate
 
 FW_FILE_GZ=${FW_DIR}/firmware.img.gz
@@ -61,6 +62,7 @@ FLASH_BOOT_STARTED_FILE=${FW_DIR}/flash_boot_started
 FLASH_BOOT_DONE_FILE=${FW_DIR}/flash_boot_done
 FLASH_REBOOT_STARTED_FILE=${FW_DIR}/flash_reboot_started
 ERROR_FILE=${FW_DIR}/error
+
 
 TMP_BOOT_DIR=/tmp/fwupdate_boot
 TMP_ROOT_DIR=/tmp/fwupdate_root
@@ -295,8 +297,13 @@ function do_download() {
     free_disk=$(df /data | tail -n 1 | tr -s ' ' | cut -d ' ' -f 4)
     if [[ "${free_disk}" -lt $((MIN_FREE_DISK * 1024)) ]]; then
         echo "not enough disk space" | tee 1>&2 ${ERROR_FILE}
-        rm ${DOWNLOAD_STARTED_FILE}
-        exit 1
+        if [[ -x ${DISK_CLEANUP_SCRIPT} ]]; then
+            echo "running the cleanup script" | tee 1>&2 ${ERROR_FILE}
+            ${DISK_CLEANUP_SCRIPT}
+        else
+            rm ${DOWNLOAD_STARTED_FILE}
+            exit 1
+        fi
     fi
 
     outfile=${FW_FILE_GZ}
