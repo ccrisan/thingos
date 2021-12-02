@@ -68,8 +68,8 @@ rm -f ${TARGET}/sbin/blkid
 rm -f ${TARGET}/usr/bin/ul
 rm -f ${TARGET}/sbin/findfs
 rm -f ${TARGET}/sbin/wipefs
-rm -f ${TARGET}/usr/bin/script
 rm -f ${TARGET}/usr/bin/scriptreplay
+rm -f ${TARGET}/usr/bin/scriptlive
 rm -f ${TARGET}/sbin/fsck.minix
 rm -f ${TARGET}/sbin/mkfs.minix
 rm -f ${TARGET}/usr/bin/setterm
