@@ -4,11 +4,12 @@
 #
 ################################################################################
 
-PNGQUANT_VERSION = 2.12.5
+PNGQUANT_VERSION = 2.16.0
 PNGQUANT_SOURCE = pngquant-$(PNGQUANT_VERSION)-src.tar.gz
 PNGQUANT_SITE = https://pngquant.org
 PNGQUANT_LICENSE = GPL-3.0+
 PNGQUANT_LICENSE_FILES = COPYRIGHT
+PNGQUANT_CPE_ID_VENDOR = pngquant
 HOST_PNGQUANT_DEPENDENCIES = host-libpng
 PNGQUANT_DEPENDENCIES = libpng
 

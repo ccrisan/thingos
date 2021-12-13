@@ -1,12 +1,10 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 """
 Byte compile all .py files from provided directories. This script is an
 alternative implementation of compileall.compile_dir written with
 cross-compilation in mind.
 """
-
-from __future__ import print_function
 
 import argparse
 import os
@@ -30,7 +28,7 @@ def compile_one(host_path, strip_root=None, verbose=False):
     if os.path.islink(host_path) or not os.path.isfile(host_path):
         return  # only compile real files
 
-    if not re.match(r"^[_A-Za-z][_A-Za-z0-9]+\.py$",
+    if not re.match(r"^[_A-Za-z][_A-Za-z0-9]*\.py$",
                     os.path.basename(host_path)):
         return  # only compile "importable" python modules
 

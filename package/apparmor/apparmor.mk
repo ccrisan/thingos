@@ -6,11 +6,12 @@
 
 # When updating the version here, please also update the libapparmor package
 APPARMOR_VERSION_MAJOR = 3.0
-APPARMOR_VERSION = $(APPARMOR_VERSION_MAJOR).0
-APPARMOR_SITE = https://launchpad.net/apparmor/$(APPARMOR_VERSION_MAJOR)/$(APPARMOR_VERSION_MAJOR)/+download
+APPARMOR_VERSION = $(APPARMOR_VERSION_MAJOR).3
+APPARMOR_SITE = https://launchpad.net/apparmor/$(APPARMOR_VERSION_MAJOR)/$(APPARMOR_VERSION)/+download
 APPARMOR_DL_SUBDIR = libapparmor
 APPARMOR_LICENSE = GPL-2.0
 APPARMOR_LICENSE_FILES = LICENSE parser/COPYING.GPL
+APPARMOR_CPE_ID_VENDOR = canonical
 
 APPARMOR_DEPENDENCIES = libapparmor
 
@@ -58,7 +59,8 @@ ifeq ($(BR2_PER_PACKAGE_DIRECTORIES),y)
 define APPARMOR_FIXUP_APXS
 	$(SED) "s@$(PER_PACKAGE_DIR)/[^/]\+/@$(PER_PACKAGE_DIR)/apparmor/@g" \
 		$(STAGING_DIR)/usr/bin/apxs \
-		$(STAGING_DIR)/usr/build/config_vars.mk
+		$(STAGING_DIR)/usr/build/config_vars.mk \
+		$(STAGING_DIR)/usr/build-1/libtool
 endef
 APPARMOR_POST_CONFIGURE_HOOKS += APPARMOR_FIXUP_APXS
 endif

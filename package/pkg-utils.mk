@@ -40,6 +40,11 @@ KCONFIG_DISABLE_OPT = $(call KCONFIG_MUNGE_DOT_CONFIG, $(1), $(SHARP_SIGN) $(1) 
 pkgdir = $(dir $(lastword $(MAKEFILE_LIST)))
 pkgname = $(lastword $(subst /, ,$(pkgdir)))
 
+# Helper to build the extension for a package archive, based on various
+# conditions.
+# $(1): upper-case package name
+pkg_source_ext = $(BR_FMT_VERSION_$($(1)_SITE_METHOD)).tar.gz
+
 # Define extractors for different archive suffixes
 INFLATE.bz2  = $(BZCAT)
 INFLATE.gz   = $(ZCAT)
@@ -102,12 +107,13 @@ endef
 # _json-info-pkg, _json-info-pkg-details, _json-info-fs: private helpers
 # for json-info, above
 define _json-info-pkg
+	"name": "$($(1)_RAWNAME)",
 	$(if $($(1)_IS_VIRTUAL), \
 		"virtual": true$(comma),
 		"virtual": false$(comma)
 		$(call _json-info-pkg-details,$(1)) \
 	)
-	"build_dir": "$(patsubst $(BASE_DIR)/%,%,$($(1)_BUILDDIR))",
+	"build_dir": "$(patsubst $(CONFIG_DIR)/%,%,$($(1)_BUILDDIR))",
 	$(if $(filter target,$($(1)_TYPE)), \
 		"install_target": $(call yesno-to-bool,$($(1)_INSTALL_TARGET))$(comma) \
 		"install_staging": $(call yesno-to-bool,$($(1)_INSTALL_STAGING))$(comma) \
@@ -119,6 +125,9 @@ define _json-info-pkg
 	"reverse_dependencies": [
 		$(call make-comma-list,$(sort $($(1)_RDEPENDENCIES)))
 	]
+	$(if $($(1)_CPE_ID_VALID), \
+		$(comma) "cpe-id": "$($(1)_CPE_ID)" \
+	)
 	$(if $($(1)_IGNORE_CVES),
 		$(comma) "ignore_cves": [
 			$(call make-comma-list,$(sort $($(1)_IGNORE_CVES)))
@@ -147,6 +156,10 @@ define _json-info-pkg-details
 endef
 
 define _json-info-fs
+	"image_name": $(if $($(1)_FINAL_IMAGE_NAME), \
+				"$($(1)_FINAL_IMAGE_NAME)", \
+				null \
+			),
 	"dependencies": [
 		$(call make-comma-list,$(sort $($(1)_DEPENDENCIES)))
 	]
@@ -158,8 +171,9 @@ endef
 clean-json = $(strip \
 	$(subst $(comma)},}, $(subst $(comma)$(space)},$(space)}, \
 	$(subst $(comma)],], $(subst $(comma)$(space)],$(space)], \
+	$(subst \,\\, \
 		$(strip $(1)) \
-	)))) \
+	))))) \
 )
 
 ifeq ($(BR2_PER_PACKAGE_DIRECTORIES),y)

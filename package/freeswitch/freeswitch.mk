@@ -4,7 +4,7 @@
 #
 ################################################################################
 
-FREESWITCH_VERSION = 1.10.5
+FREESWITCH_VERSION = 1.10.6
 FREESWITCH_SOURCE = freeswitch-$(FREESWITCH_VERSION).-release.tar.xz
 FREESWITCH_SITE = https://files.freeswitch.org/freeswitch-releases
 # External modules need headers/libs from staging
@@ -19,6 +19,8 @@ FREESWITCH_LICENSE_FILES = \
 	libs/apr/LICENSE \
 	libs/apr-util/LICENSE \
 	libs/srtp/LICENSE
+
+FREESWITCH_CPE_ID_VENDOR = freeswitch
 
 # required dependencies
 FREESWITCH_DEPENDENCIES = \

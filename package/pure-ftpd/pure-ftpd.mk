@@ -9,6 +9,7 @@ PURE_FTPD_SITE = https://download.pureftpd.org/pub/pure-ftpd/releases
 PURE_FTPD_SOURCE = pure-ftpd-$(PURE_FTPD_VERSION).tar.bz2
 PURE_FTPD_LICENSE = ISC
 PURE_FTPD_LICENSE_FILES = COPYING
+PURE_FTPD_CPE_ID_VENDOR = pureftpd
 PURE_FTPD_DEPENDENCIES = $(if $(BR2_PACKAGE_LIBICONV),libiconv)
 
 # 0001-listdir-reuse-a-single-buffer-to-store-every-file-name-to-display.patch
@@ -19,6 +20,9 @@ PURE_FTPD_IGNORE_CVES += CVE-2020-9365
 
 # 0003-diraliases-always-set-the-tail-of-the-list-to-NULL.patch
 PURE_FTPD_IGNORE_CVES += CVE-2020-9274
+
+# 0004-Initialize-the-max-upload-file-size-when-quotas-are-enabled.patch
+PURE_FTPD_IGNORE_CVES += CVE-2021-40524
 
 PURE_FTPD_CONF_OPTS = \
 	--with-altlog \

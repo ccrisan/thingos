@@ -4,12 +4,13 @@
 #
 ################################################################################
 
-GO_VERSION = 1.15.6
+GO_VERSION = 1.17.3
 GO_SITE = https://storage.googleapis.com/golang
 GO_SOURCE = go$(GO_VERSION).src.tar.gz
 
 GO_LICENSE = BSD-3-Clause
 GO_LICENSE_FILES = LICENSE
+GO_CPE_ID_VENDOR = golang
 
 HOST_GO_DEPENDENCIES = host-go-bootstrap
 HOST_GO_GOPATH = $(HOST_DIR)/usr/share/go-path
@@ -48,6 +49,10 @@ else ifeq ($(BR2_aarch64),y)
 GO_GOARCH = arm64
 else ifeq ($(BR2_i386),y)
 GO_GOARCH = 386
+# i386: use softfloat if no SSE2: https://golang.org/doc/go1.16#386
+ifneq ($(BR2_X86_CPU_HAS_SSE2),y)
+GO_GO386 = softfloat
+endif
 else ifeq ($(BR2_x86_64),y)
 GO_GOARCH = amd64
 else ifeq ($(BR2_powerpc64),y)
@@ -89,6 +94,7 @@ HOST_GO_CROSS_ENV = \
 	CC_FOR_TARGET="$(TARGET_CC)" \
 	CXX_FOR_TARGET="$(TARGET_CXX)" \
 	GOARCH=$(GO_GOARCH) \
+	$(if $(GO_GO386),GO386=$(GO_GO386)) \
 	$(if $(GO_GOARM),GOARM=$(GO_GOARM)) \
 	GO_ASSUME_CROSSCOMPILING=1
 

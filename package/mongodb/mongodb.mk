@@ -11,13 +11,16 @@ MONGODB_SOURCE = mongodb-src-r$(MONGODB_VERSION).tar.gz
 MONGODB_LICENSE = Apache-2.0 (drivers), SSPL (database)
 MONGODB_LICENSE_FILES = APACHE-2.0.txt LICENSE-Community.txt
 
+MONGODB_CPE_ID_VENDOR = mongodb
+MONGODB_SELINUX_MODULES = mongodb
+
 MONGODB_DEPENDENCIES = \
 	boost \
 	host-python3-cheetah \
 	host-python3-psutil \
 	host-python3-pyyaml \
 	host-python3-regex \
-	host-python3-requests \
+	host-python-requests \
 	host-scons \
 	pcre \
 	snappy \

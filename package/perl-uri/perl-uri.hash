@@ -1,6 +1,6 @@
 # retrieved by scancpan from http://cpan.metacpan.org/
-md5  978454ba823a6908bad1c3c1804945d3  URI-5.05.tar.gz
-sha256  a5c113d2d02706d9fbdca6a86f290c5b05b2f86836d4e7fe1447f063261b79ec  URI-5.05.tar.gz
+md5  bd66b0c620d076c4b0de9507b5f1fbdf  URI-5.09.tar.gz
+sha256  03e63ada499d2645c435a57551f041f3943970492baa3b3338246dab6f1fae0a  URI-5.09.tar.gz
 
 # computed by scancpan
 sha256  65cd6f88516a30f56fd4e0080fb78ea69424fc89067470dc994e4abfba08664e  LICENSE

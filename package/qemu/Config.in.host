@@ -37,6 +37,7 @@ config BR2_PACKAGE_HOST_QEMU_USER_ARCH_SUPPORTS
 config BR2_PACKAGE_HOST_QEMU
 	bool "host qemu"
 	depends on BR2_PACKAGE_HOST_QEMU_SYSTEM_ARCH_SUPPORTS || BR2_PACKAGE_HOST_QEMU_USER_ARCH_SUPPORTS
+	depends on BR2_HOST_GCC_AT_LEAST_8
 	select BR2_PACKAGE_HOST_QEMU_LINUX_USER_MODE \
 		if !BR2_PACKAGE_HOST_QEMU_SYSTEM_MODE && BR2_PACKAGE_HOST_QEMU_USER_ARCH_SUPPORTS
 	select BR2_PACKAGE_HOST_QEMU_SYSTEM_MODE \
@@ -48,6 +49,11 @@ config BR2_PACKAGE_HOST_QEMU
 	  This option builds an emulator for your selected architecture.
 
 	  http://www.qemu.org
+
+comment "host-qemu needs a host gcc >= 8"
+	depends on BR2_PACKAGE_HOST_QEMU_SYSTEM_ARCH_SUPPORTS || \
+		BR2_PACKAGE_HOST_QEMU_USER_ARCH_SUPPORT
+	depends on !BR2_HOST_GCC_AT_LEAST_8
 
 if BR2_PACKAGE_HOST_QEMU
 
@@ -73,6 +79,10 @@ config BR2_PACKAGE_HOST_QEMU_LINUX_USER_MODE
 	  the running host kernel, you may run into invalid system
 	  calls, which may yield surprising effects.
 
+config BR2_PACKAGE_HOST_QEMU_USER_MODE_ARGS
+	string
+	default "-cpu Nehalem,check=false" if BR2_x86_corei7
+
 config BR2_PACKAGE_HOST_QEMU_VDE2
 	bool "VDE2 support"
 	help
@@ -82,6 +92,7 @@ config BR2_PACKAGE_HOST_QEMU_VDE2
 
 config BR2_PACKAGE_HOST_QEMU_VIRTFS
 	bool "Virtual filesystem support"
+	depends on BR2_PACKAGE_HOST_QEMU_SYSTEM_MODE
 	help
 	  Enables support for virtual filesystem in Qemu allowing
 	  shared filesystem between Qemu and its emulated target.
