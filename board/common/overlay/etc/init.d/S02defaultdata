@@ -38,7 +38,7 @@ case "$1" in
         test -s /data/etc/shadow || set_empty_root_passwd
         test -s /data/etc/version || copy_version
         test -s /data/etc/localtime || set_utc_timezone
-        copy_data_overlay
+        test -d /usr/share/dataoverlay/ && copy_data_overlay
         ;;
 
     stop)
