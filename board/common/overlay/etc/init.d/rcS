@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 BOOT_LOG=/var/log/boot.log
 TMP_BOOT_LOG=/tmp/_boot.log
@@ -12,19 +12,23 @@ set +a
 
 source /etc/init.d/base
 
-echo "---- booting ${OS_NAME} ${OS_VERSION} ----" | tee -a ${TMP_BOOT_LOG}
+function run_init() {
+    echo "---- booting ${OS_NAME} ${OS_VERSION} ----"
 
-# start all init scripts in /etc/init.d,
-# executing them in numerical order.
-(for i in /etc/init.d/S??* /etc/init.d/bootdone; do
-    if ! [[ -x "${i}" ]]; then continue; fi
-    if [[ -f /data/etc/no_$(basename ${i}) ]]; then continue; fi
-    ${i} start || break
-done& echo $! > ${PID_FILE}) | tee -a ${TMP_BOOT_LOG} &
+    # Start all init scripts in /etc/init.d, executing them in numerical order.
+    for i in /etc/init.d/S??* /etc/init.d/bootdone; do
+        if ! [[ -x "${i}" ]]; then continue; fi
+        if [[ -f /data/etc/no_$(basename ${i}) ]]; then continue; fi
+        ${i} start || break
+    done
+}
+
+(run_init & echo $! > ${PID_FILE}) | tee -a ${TMP_BOOT_LOG} &
 
 pid=$(cat ${PID_FILE})
-while kill -0 ${pid} 2>/dev/null; do
+while kill -0 ${pid} &>/dev/null; do
     sleep 1
 done
 
+# Check for data partition availability and only then move the boot log
 test -d $(dirname ${BOOT_LOG}) && cat ${TMP_BOOT_LOG} >> ${BOOT_LOG}
