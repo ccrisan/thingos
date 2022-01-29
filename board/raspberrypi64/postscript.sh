@@ -7,7 +7,7 @@ mkdir -p ${BOOT_DIR}/overlays
 cp ${BOARD_DIR}/config.txt ${BOOT_DIR}
 cp ${BOARD_DIR}/cmdline.txt ${BOOT_DIR}
 cp ${BOARD_DIR}/initrd.gz ${BOOT_DIR}
-cp ${IMG_DIR}/Image.gz ${BOOT_DIR}/kernel.gz
+cp ${IMG_DIR}/Image.gz ${BOOT_DIR}
 cp ${IMG_DIR}/*.dtb ${BOOT_DIR}
 cp ${RPI_FW_DIR}/start*.elf ${BOOT_DIR}
 cp ${RPI_FW_DIR}/fixup*.dat ${BOOT_DIR}
