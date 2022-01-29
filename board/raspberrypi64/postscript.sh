@@ -11,4 +11,5 @@ cp ${IMG_DIR}/Image.gz ${BOOT_DIR}/kernel.gz
 cp ${IMG_DIR}/*.dtb ${BOOT_DIR}
 cp ${RPI_FW_DIR}/start*.elf ${BOOT_DIR}
 cp ${RPI_FW_DIR}/fixup*.dat ${BOOT_DIR}
+cp ${RPI_FW_DIR}/bootcode.bin ${BOOT_DIR}
 cp ${RPI_FW_DIR}/overlays/*.dtbo ${BOOT_DIR}/overlays
