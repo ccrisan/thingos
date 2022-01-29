@@ -7,7 +7,6 @@ export BOARD=$(basename $(dirname ${TARGET}))
 export COMMON_DIR=$(dirname $0)
 export BOARD_DIR=${COMMON_DIR}/../${BOARD}
 export BOOT_DIR=${TARGET}/../images/boot/
-export IMG_DIR=${TARGET}/../images
 
 mkdir -p ${BOOT_DIR}
 

@@ -8,7 +8,7 @@
 #  THINGOS_VERSION=3.14.15
 
 
-if [ -z "${IMG_DIR}" ] || [ -z "${BOARD}" ]; then
+if [ -z "${BINARIES_DIR}" ] || [ -z "${BOARD}" ]; then
     echo "this script must be invoked from board specific mkimage.sh"
     exit 1
 fi
@@ -21,21 +21,21 @@ function msg() {
 
 BOOT_START=${BOOT_START:-1}  # MB
 
-BOOT_SRC=${IMG_DIR}/boot
-BOOT=${IMG_DIR}/.boot
-BOOT_IMG=${IMG_DIR}/boot.img
+BOOT_SRC=${BINARIES_DIR}/boot
+BOOT=${BINARIES_DIR}/.boot
+BOOT_IMG=${BINARIES_DIR}/boot.img
 BOOT_SIZE="30"  # MB - reserved up to 100 MB
 
 ROOT_START="100"  # MB
-ROOT_SRC=${IMG_DIR}/rootfs.tar
-ROOT=${IMG_DIR}/.root
-ROOT_IMG=${IMG_DIR}/root.img
+ROOT_SRC=${BINARIES_DIR}/rootfs.tar
+ROOT=${BINARIES_DIR}/.root
+ROOT_IMG=${BINARIES_DIR}/root.img
 ROOT_SIZE="200"  # MB
 
 GUARD_SIZE="10"  # MB
 DISK_SIZE=$((ROOT_START + ROOT_SIZE + GUARD_SIZE))
 
-COMMON_DIR=$(cd ${IMG_DIR}/../../../board/common; pwd)
+COMMON_DIR=$(cd ${BINARIES_DIR}/../../../board/common; pwd)
 OS_NAME=$(source ${COMMON_DIR}/overlay/etc/version && echo ${OS_SHORT_NAME})
 
 # "-f", unless a /dev/loopX is specified
@@ -107,9 +107,9 @@ msg "destroying root loop device ${loop_dev}"
 losetup -d ${loop_dev}
 sync
 
-DISK_IMG=${IMG_DIR}/disk.img
-BOOT_IMG=${IMG_DIR}/boot.img
-ROOT_IMG=${IMG_DIR}/root.img
+DISK_IMG=${BINARIES_DIR}/disk.img
+BOOT_IMG=${BINARIES_DIR}/boot.img
+ROOT_IMG=${BINARIES_DIR}/root.img
 
 if ! [ -r ${BOOT_IMG} ]; then
     echo "boot image missing"

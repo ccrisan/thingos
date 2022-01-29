@@ -138,7 +138,7 @@ elif [[ "$target" == initramfs* ]]; then
     extra_args=${target:10}
     $0 "${board}_initramfs" "$extra_args"
     if [ -z "$extra_args" ] && [ -x "$boarddir/cpinitramfs.sh" ]; then
-        IMG_DIR=$basedir/output/${board}_initramfs/images/ BOARD_DIR=$boarddir "$boarddir/cpinitramfs.sh"
+        BINARIES_DIR=$basedir/output/${board}_initramfs/images/ BOARD_DIR=$boarddir "$boarddir/cpinitramfs.sh"
     fi
 
 elif [ "$target" == "all" ]; then
@@ -153,4 +153,3 @@ else  # if [ -z "$target ]
     $0 "$board" all
     echo "build successful"
 fi
-
