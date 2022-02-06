@@ -524,10 +524,10 @@ function do_flash_reboot() {
         /usr/libexec/fw-prepare-boot
     fi
 
-    sync
-    busybox reboot &
-    sleep 10
-    echo b > /proc/sysrq-trigger
+    echo "rebooting..."
+    /sbin/reboot* &
+    # guard forced reboot after 3 minutes
+    sleep 180 && echo b > /proc/sysrq-trigger
 
     exit 0
 }
