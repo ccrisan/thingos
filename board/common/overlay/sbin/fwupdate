@@ -525,7 +525,7 @@ function do_flash_reboot() {
     fi
 
     echo "rebooting..."
-    /sbin/reboot* &
+    test -x /sbin/reboot.bak && /sbin/reboot.bak || /sbin/reboot &
     # guard forced reboot after 3 minutes
     sleep 180 && echo b > /proc/sysrq-trigger
 

@@ -9,10 +9,9 @@ killall rcS &>/dev/null || true
 # write buffers to disk
 /bin/sync
 
-# allow the shutdown script 20 seconds to shut down,
+# allow the shutdown script 120 seconds to shut down,
 # after which we stop feeding the watchdog
-(sleep 20 && /usr/bin/killall -STOP watchdog) &
+(sleep 120 && /usr/bin/killall -STOP watchdog) &
 
 # actual reboot command
 /bin/busybox reboot
-
