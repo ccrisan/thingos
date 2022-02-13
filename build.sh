@@ -147,7 +147,7 @@ elif [ "$target" == "all" ]; then
 
 elif [ -n "$target" ]; then
     prepare_target_dir
-    make O="$outputdir" "$target"
+    make O="$outputdir" $target
 
 else  # if [ -z "$target ]
     $0 "$board" all
