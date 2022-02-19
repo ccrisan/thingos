@@ -1,4 +1,4 @@
 #!/bin/bash
 
-echo "00000000"
-
+__sn=$(cat /proc/cpuinfo | grep Serial | tr -d ' ' | cut -d ':' -f 2)
+echo ${__sn: -8}
