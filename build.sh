@@ -80,10 +80,10 @@ if ! [ -f "$outputdir/.config" ]; then
 fi
 
 if [ "$target" == "mkimage" ]; then
-    "$boarddir/mkimage.sh"
+    "${basedir}/support/scripts/mkimage.sh" ${board}
 
 elif [ "$target" == "mkrelease" ]; then
-    test -f "$outputdir/images/$osname-$board.img" || "$boarddir/mkimage.sh"
+    test -f "$outputdir/images/$osname-$board.img" || "${basedir}/support/scripts/mkimage.sh" ${board}
     cp "$outputdir/images/$osname-$board.img" "$outputdir/images/$osname-$board-$osversion.img"
     
     echo "preparing compressed xz image"

@@ -1,6 +1,6 @@
 #!/bin/bash -e
 
-# env vars:
+# optional env vars:
 #  THINGOS_LOOP_DEV=/dev/loop0
 #  THINGOS_NAME=thingOS
 #  THINGOS_SHORT_NAME=thingos
@@ -8,16 +8,19 @@
 #  THINGOS_VERSION=3.14.15
 
 
-if [ -z "${BINARIES_DIR}" ] || [ -z "${BOARD}" ]; then
-    echo "this script must be invoked from board specific mkimage.sh"
-    exit 1
-fi
-
-test "root" != "${USER}" && exec sudo -E $0 "$@"
+test -n "$1" || { echo "Usage: $0 <board>"; exit 1; }
+test $(id -u) -eq 0 || { echo "This script needs to be run as root."; exit 1; }
 
 function msg() {
     echo " * $1"
 }
+
+BOARD=$1
+
+# Under BR make invocation, ${BINARIES_DIR} would be automatically set to the images dir.
+# For the scope of this script which is run outside of the BR make environment, we must set it manually.
+BINARIES_DIR=$(dirname $0)/../../output/${BOARD}/images/
+COMMON_DIR=$(dirname $0)/../../board/common
 
 BOOT_START=${BOOT_START:-1}  # MB
 
@@ -35,16 +38,25 @@ ROOT_SIZE="200"  # MB
 GUARD_SIZE="10"  # MB
 DISK_SIZE=$((ROOT_START + ROOT_SIZE + GUARD_SIZE))
 
-COMMON_DIR=$(cd ${BINARIES_DIR}/../../../board/common; pwd)
 OS_NAME=$(source ${COMMON_DIR}/overlay/etc/version && echo ${OS_SHORT_NAME})
 
 # "-f", unless a /dev/loopX is specified
 LOOP_DEV=${THINGOS_LOOP_DEV:--f}
 
+function cleanup_on_exit() {
+    set +e
+
+    umount ${loop_dev}* 2>/dev/null
+    losetup -d ${loop_dev} 2>/dev/null
+}
+
+
 # boot filesystem
 msg "creating boot loop device ${LOOP_DEV}"
 dd if=/dev/zero of=${BOOT_IMG} bs=1M count=${BOOT_SIZE}
 loop_dev=$(losetup --show ${LOOP_DEV} ${BOOT_IMG})
+
+trap cleanup_on_exit EXIT
 
 msg "creating boot filesystem"
 mkfs.vfat -F16 ${loop_dev}
@@ -188,4 +200,3 @@ mv ${DISK_IMG} $(dirname ${DISK_IMG})/${OS_NAME}-${BOARD}.img
 DISK_IMG=$(dirname ${DISK_IMG})/${OS_NAME}-${BOARD}.img
 
 msg "$(realpath "${DISK_IMG}") is ready"
-
