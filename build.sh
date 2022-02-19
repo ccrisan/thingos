@@ -85,17 +85,12 @@ if [ "$target" == "mkimage" ]; then
 elif [ "$target" == "mkrelease" ]; then
     test -f "$outputdir/images/$osname-$board.img" || "${basedir}/support/scripts/mkimage.sh" ${board}
     cp "$outputdir/images/$osname-$board.img" "$outputdir/images/$osname-$board-$osversion.img"
-    
+
     echo "preparing compressed xz image"
     rm -f "$outputdir/images/$osname-$board-$osversion.img.xz"
     xz -6ek -T 0 "$outputdir/images/$osname-$board-$osversion.img"
     echo "your xz image is ready at $outputdir/images/$osname-$board-$osversion.img.xz"
-    
-    echo "preparing compressed gz image"
-    rm -f "$outputdir/images/$osname-$board-$osversion.img.gz"
-    $gzip "$outputdir/images/$osname-$board-$osversion.img"
-    echo "your gz image is ready at $outputdir/images/$osname-$board-$osversion.img.gz"
-    
+
     rm -f "$outputdir/images/$osname-$board-$osversion.img"
 
 elif [ "$target" == "clean-target" ]; then
