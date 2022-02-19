@@ -204,6 +204,7 @@ rm -f ${TARGET}/etc/init.d/S45connman
 rm -f ${TARGET}/etc/init.d/S48sntp
 rm -f ${TARGET}/etc/init.d/S49ntp
 rm -f ${TARGET}/etc/init.d/S49chrony
+rm -f ${TARGET}/etc/init.d/S50avahi-daemon
 rm -f ${TARGET}/etc/init.d/S50sshd
 rm -f ${TARGET}/etc/init.d/S50proftpd
 rm -f ${TARGET}/etc/init.d/S50postgresql
