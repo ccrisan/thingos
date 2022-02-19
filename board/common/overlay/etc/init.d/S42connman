@@ -32,6 +32,7 @@ watch_online() {
                 is_online=false
             fi
         fi
+        sleep 1
     done
 }
 

@@ -1,3 +1,14 @@
 #!/bin/bash
 
-cat /proc/uptime | grep -oE '^[[:digit:]]+' > /var/run/panic_inhibit
+if [[ "$1" == "-q" ]]; then
+    source /etc/init.d/panic
+    if panic_is_inhibited; then
+        echo "true"
+        exit 0
+    else
+        echo "false"
+        exit 1
+    fi
+else
+    cat /proc/uptime | grep -oE '^[[:digit:]]+' > /var/run/panic_inhibit
+fi
