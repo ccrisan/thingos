@@ -1,3 +1,0 @@
-#!/bin/sh
-
-sed -ri 's/initramfs_enabled=.*/initramfs_enabled=0/' /boot/uEnv.txt
