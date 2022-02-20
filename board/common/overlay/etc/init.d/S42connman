@@ -40,6 +40,7 @@ start() {
     msg_begin "Starting connman"
 
     mkdir -p ${RUN_DIR}
+    ln -sf ${RUN_DIR}/resolv.conf /tmp/resolv.conf
     
     ifconfig lo up
     ${PROG} -n -r &> ${LOG} &
