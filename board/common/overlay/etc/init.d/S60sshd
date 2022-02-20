@@ -44,6 +44,9 @@ start() {
     # adjust any existing client keys permissions
     chmod go-rwx ${USER_DIR}/id_rsa* 2>/dev/null
 
+    # copy system authorized keys, if present
+    test -s /etc/ssh/authorized_keys && cp /etc/ssh/authorized_keys ${USER_DIR}
+
     msg_begin "Starting sshd"
     
     umask 077
