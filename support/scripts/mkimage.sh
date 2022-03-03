@@ -15,11 +15,14 @@ function msg() {
     echo " * $1"
 }
 
+set -a
+
 BOARD=$1
 
 # Under BR make invocation, ${BINARIES_DIR} would be automatically set to the images dir.
 # For the scope of this script which is run outside of the BR make environment, we must set it manually.
 BINARIES_DIR=$(dirname $0)/../../output/${BOARD}/images/
+BOARD_DIR=$(dirname $0)/../../board/${BOARD}
 COMMON_DIR=$(dirname $0)/../../board/common
 
 BOOT_START=${BOOT_START:-1}  # MB
@@ -39,6 +42,8 @@ GUARD_SIZE="10"  # MB
 DISK_SIZE=$((ROOT_START + ROOT_SIZE + GUARD_SIZE))
 
 OS_NAME=$(source ${COMMON_DIR}/overlay/etc/version && echo ${OS_SHORT_NAME})
+
+test -s ${BOARD_DIR}/board.conf && source ${BOARD_DIR}/board.conf
 
 # "-f", unless a /dev/loopX is specified
 LOOP_DEV=${THINGOS_LOOP_DEV:--f}
@@ -136,15 +141,22 @@ fi
 # disk image
 msg "creating disk loop device ${LOOP_DEV}"
 dd if=/dev/zero of=${DISK_IMG} bs=1M count=${DISK_SIZE}
-if [ -n "${UBOOT_BIN}" ] && [ -n "${UBOOT_SEEK}" ]; then
-    msg "copying u-boot image"
-    dd conv=notrunc if=${UBOOT_BIN} of=${DISK_IMG} bs=512 seek=${UBOOT_SEEK}
+if [[ -n "${BOOT_BIN}" ]]; then
+    for boot_bin in "${BOOT_BIN[@]}"; do
+        IFS=@ boot_bin=(${boot_bin}); unset IFS
+        bin=${boot_bin[0]}
+        seek=${boot_bin[1]}
+        msg "copying boot binary ${bin} @ ${seek}"
+        dd conv=notrunc if=${bin} of=${DISK_IMG} bs=512 seek=${seek}
+    done
 fi
 loop_dev=$(losetup --show ${LOOP_DEV} ${DISK_IMG})
 
 msg "partitioning disk"
 set +e
-fdisk -u=sectors ${loop_dev} <<END
+PART_TABLE_TYPE=${PART_TABLE_TYPE:-dos}
+if [[ ${PART_TABLE_TYPE} == dos ]]; then
+    fdisk -u=sectors ${loop_dev} <<END
 o
 n
 p
@@ -164,6 +176,26 @@ a
 1
 w
 END
+elif [[ ${PART_TABLE_TYPE} == gpt ]]; then
+    fdisk -u=sectors ${loop_dev} <<END
+g
+n
+1
+$((BOOT_START * 2048))
++${BOOT_SIZE}M
+n
+2
+$((ROOT_START * 2048))
++${ROOT_SIZE}M
+t
+1
+1
+w
+END
+else
+    msg "unknown partition table type ${PART_TABLE_TYPE}"
+    exit 1
+fi
 set -e
 sync
 
