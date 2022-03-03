@@ -8,7 +8,7 @@ cp ${BOARD_DIR}/extlinux.conf ${BOOT_DIR}/extlinux
 
 mkdir -p ${TARGET_DIR}/vendor/etc
 cp -r ${BOARD_DIR}/firmware/* ${TARGET_DIR}/lib/firmware
-ln -sf /lib/firmware /vendor/etc/firmware
+ln -sf /lib/firmware ${TARGET_DIR}/vendor/etc/firmware
 
 cp ${BINARIES_DIR}/rk3566-radxa-cm3-rpi-cm4-io.dtb ${BOOT_DIR}
 cp ${BINARIES_DIR}/Image ${BOOT_DIR}
