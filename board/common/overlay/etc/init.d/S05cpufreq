@@ -9,8 +9,11 @@ CPU_FREQ_MIN=""
 CPU_FREQ_MAX=""
 
 CPU_FREQ_DIR="/sys/devices/system/cpu/cpu0/cpufreq"
-GOVERNOR_DIR="/sys/devices/system/cpu/cpufreq/${CPU_FREQ_GOVERNOR}"
+GOVERNOR_DIR1="/sys/devices/system/cpu/cpufreq/${CPU_FREQ_GOVERNOR}"
+GOVERNOR_DIR2="/sys/devices/system/cpu/cpu0/cpufreq/${CPU_FREQ_GOVERNOR}"
 
+test -d "${GOVERNOR_DIR1}" && GOVERNOR_DIR=${GOVERNOR_DIR1} || GOVERNOR_DIR=${GOVERNOR_DIR2}
+test -d "${CPU_FREQ_DIR}" && test -d "${GOVERNOR_DIR}" || exit 0  # no CPU freq support
 
 test -n "${OS_VERSION}" || source /etc/init.d/base
 
