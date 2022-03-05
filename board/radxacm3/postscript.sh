@@ -1,14 +1,16 @@
 #!/bin/sh
 
-mkimage="${BUILD_DIR}/uboot-custom/tools/mkimage"
-${mkimage} -n rk3568 -T rksd -d ${BOARD_DIR}/rk3566_ddr_1056MHz_v1.10.bin:${BINARIES_DIR}/u-boot-spl.bin ${BINARIES_DIR}/idbloader.img
-
-mkdir ${BOOT_DIR}/extlinux
-cp ${BOARD_DIR}/extlinux.conf ${BOOT_DIR}/extlinux
+radxa_mkimage="${BUILD_DIR}/uboot-custom/tools/mkimage"
+mainline_mkimage="${HOST_DIR}/bin/mkimage"
+${radxa_mkimage} -n rk3568 -T rksd -d ${BOARD_DIR}/rk3566_ddr_1056MHz_v1.10.bin:${BINARIES_DIR}/u-boot-spl.bin ${BINARIES_DIR}/idbloader.img
+${mainline_mkimage} -C none -A arm -T script -d ${BOARD_DIR}/boot.cmd ${BOOT_DIR}/boot.scr
 
 mkdir -p ${TARGET_DIR}/vendor/etc
 cp -r ${BOARD_DIR}/firmware/* ${TARGET_DIR}/lib/firmware
 ln -sf /lib/firmware ${TARGET_DIR}/vendor/etc/firmware
 
+mkdir -p ${BOOT_DIR}/overlays
 cp ${BINARIES_DIR}/rk3566-radxa-cm3-rpi-cm4-io.dtb ${BOOT_DIR}
+cp ${BUILD_DIR}/linux-custom/arch/arm64/boot/dts/rockchip/overlay/*.dtbo ${BOOT_DIR}/overlays
 cp ${BINARIES_DIR}/Image ${BOOT_DIR}
+cp ${BOARD_DIR}/uEnv.txt ${BOOT_DIR}
