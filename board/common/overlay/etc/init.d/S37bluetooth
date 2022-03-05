@@ -41,6 +41,8 @@ start() {
         msg_fail
         return 1
     fi
+    
+    rfkill unblock bluetooth &>/dev/null
 
     msg_begin "Starting bluetoothd"
     ${PROG} &>/dev/null &
