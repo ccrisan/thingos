@@ -27,4 +27,10 @@ for overlay_file in ${overlays}; do
     fi
 done
 
-booti ${kernel_addr_r} ${ramdisk_addr_r}:${initrd_size} ${fdt_addr_r}
+echo "Initrd size is ${initrd_size}"
+echo "v12"
+if test -n "${initrd}"; then
+    booti ${kernel_addr_r} ${ramdisk_addr_r}:${initrd_size} ${fdt_addr_r}
+else
+    booti ${kernel_addr_r} - ${fdt_addr_r}
+fi

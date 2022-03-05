@@ -1,4 +1,4 @@
 #!/bin/sh
 
-cat /boot/extlinux/extlinux.conf | grep -v initrd > /boot/extlinux/extlinux.conf.new
-mv /boot/extlinux/extlinux.conf.new /boot/extlinux/extlinux.conf
+cat /boot/uEnv.txt | grep -v initrd > /boot/uEnv.txt.new
+mv /boot/uEnv.txt.new /boot/uEnv.txt

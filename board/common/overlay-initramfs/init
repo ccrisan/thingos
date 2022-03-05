@@ -112,4 +112,3 @@ dd if=${FW_FILE_EXTR} skip=${root_start} of=${ROOT_DEV} bs=1048576 count=${root_
 
 msg "Cleaning up"
 rm -rf ${FW_DIR}
-

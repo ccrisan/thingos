@@ -13,4 +13,5 @@ mkdir -p ${BOOT_DIR}/overlays
 cp ${BINARIES_DIR}/rk3566-radxa-cm3-rpi-cm4-io.dtb ${BOOT_DIR}
 cp ${BUILD_DIR}/linux-custom/arch/arm64/boot/dts/rockchip/overlay/*.dtbo ${BOOT_DIR}/overlays
 cp ${BINARIES_DIR}/Image ${BOOT_DIR}
+cp ${BOARD_DIR}/initrd.gz ${BOOT_DIR}
 cp ${BOARD_DIR}/uEnv.txt ${BOOT_DIR}

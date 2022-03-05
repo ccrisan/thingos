@@ -1,6 +1,5 @@
-BR2_arm=y
-BR2_cortex_a7=y
-BR2_ARM_FPU_NEON_VFPV4=y
+BR2_aarch64=y
+BR2_cortex_a55=y
 BR2_CCACHE=y
 BR2_CCACHE_DIR="$(TOPDIR)/.buildroot-ccache-radxacm3-initramfs"
 BR2_OPTIMIZE_2=y

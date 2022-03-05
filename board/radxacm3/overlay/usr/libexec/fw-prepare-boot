@@ -1,3 +1,3 @@
 #!/bin/bash
 
-echo "    initrd /initrd.gz" >> /boot/extlinux/extlinux.conf
+echo "initrd=initrd.gz" >> /boot/uEnv.txt
