@@ -4,7 +4,6 @@ mkdir -p ${BOOT_DIR}/overlays
 
 cp ${BOARD_DIR}/config.txt ${BOOT_DIR}
 cp ${BOARD_DIR}/cmdline.txt ${BOOT_DIR}
-cp ${BOARD_DIR}/fwupdater.gz ${BOOT_DIR}
 cp ${BOARD_DIR}/initrd.gz ${BOOT_DIR}
 cp ${BINARIES_DIR}/zImage ${BOOT_DIR}
 cp ${BINARIES_DIR}/*.dtb ${BOOT_DIR}
