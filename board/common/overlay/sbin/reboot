@@ -3,15 +3,15 @@
 # carry on with the script in case of error
 set +e
 
-# kill the startup process if it hasn't completed yet
-killall rcS &>/dev/null || true
-
-# write buffers to disk
-/bin/sync
-
 # allow the shutdown script 120 seconds to shut down,
 # after which we stop feeding the watchdog
 (sleep 120 && /usr/bin/killall -STOP watchdog) &
+
+# kill the startup process if it hasn't completed yet
+killall rcS &>/dev/null
+
+# write buffers to disk
+/bin/sync
 
 # actual reboot command
 /bin/busybox reboot
