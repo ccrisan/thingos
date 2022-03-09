@@ -6,6 +6,8 @@ CONF="/data/etc/bluetooth.conf"
 RUN_CONF="/var/lib/bluetooth.conf"
 
 ADAPTER="hci0"
+ADAPTER_PATH="/sys/class/bluetooth/${ADAPTER}"
+ADAPTER_TIMEOUT=10
 PROG="/usr/libexec/bluetooth/bluetoothd"
 PROG_CTL="/usr/bin/bluetoothctl"
 DATA_DIR="/var/lib/bluetooth"
@@ -35,6 +37,23 @@ configure() {
 start() {
     msg_begin "Configuring bluetooth"
 
+    # adapter explicitly makred as unavailable from previous boot steps
+    if [[ -f "${NO_ON_BOARD_BT}" ]]; then
+        msg_fail "no device"
+        return 1
+    fi
+
+    # wait for adapter to be reported by OS
+    count=0
+    while ! test -e ${ADAPTER_PATH}; do
+        sleep 1
+        count=$((count + 1))
+        if [[ ${count} -ge ${ADAPTER_TIMEOUT} ]]; then
+            msg_fail "no device"
+            return 1
+        fi
+    done
+
     if configure; then
         msg_done
     else
@@ -43,12 +62,22 @@ start() {
     fi
     
     rfkill unblock bluetooth &>/dev/null
-
+    
     msg_begin "Starting bluetoothd"
     ${PROG} &>/dev/null &
-    sleep 1
-    devices=$(${PROG_CTL} list)
-    test -n "${devices}" && msg_done || { msg_fail "no device"; return; }
+
+    # wait for adapter to be reported by bluetoothctl
+    count=0
+    while test -z "$(${PROG_CTL} list 2>/dev/null)"; do
+        sleep 1
+        count=$((count + 1))
+        if [[ ${count} -ge ${ADAPTER_TIMEOUT} ]]; then
+            msg_fail "no device"
+            return 1
+        fi
+    done
+
+    msg_done
 
     # if DiscoverableTimeout is set to 0, make adapter discoverable from boot time
     if grep -E '^DiscoverableTimeout\s*=\s*0$' ${RUN_CONF} &>/dev/null; then
