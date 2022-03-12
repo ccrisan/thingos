@@ -1,0 +1,22 @@
+#!/bin/bash
+
+FIRMWARE_FILE="/lib/firmware/BCM4345C5.hcd"
+BRCM_PATCHRAM="/usr/libexec/brcm_patchram_plus1"
+UART_DEV="/dev/ttyS1"
+
+function btuart_start() {
+    # Reset Bluetooth via GPIO
+    echo "Blocking BT rfkill"
+    rfkill block bluetooth
+    sleep 3
+    
+    echo "Unblocking BT rfkill"
+    rfkill unblock bluetooth
+    sleep 3
+
+    ${BRCM_PATCHRAM} --enable_hci --no2bytes --use_baudrate_for_download --tosleep 200000 --baudrate 1500000 --patchram ${FIRMWARE_FILE} ${UART_DEV}
+}
+
+function btuart_stop() {
+    killall $(basename ${BRCM_PATCHRAM}) &>/dev/null
+}
