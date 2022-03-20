@@ -48,12 +48,12 @@ panic_action() {
     
     if panic_is_inhibited; then
         logger -t panic -s "action inhibited (caused by $1)"
-        return
+        return 1
     fi
     
     if [[ "${OS_DEBUG}" == true ]]; then
         logger -t panic -s "action ignored in debug mode (caused by $1)"
-        return
+        return 1
     fi
     
     if [[ "${delay}" -gt 0 ]]; then
@@ -63,7 +63,7 @@ panic_action() {
 
     if panic_is_inhibited; then
         logger -t panic -s "action inhibited (caused by $1)"
-        return
+        return 1
     fi
     
     logger -t panic -s "rebooting (caused by $1)"
