@@ -5,8 +5,9 @@ mainline_mkimage="${HOST_DIR}/bin/mkimage"
 ${radxa_mkimage} -n rk3568 -T rksd -d ${BOARD_DIR}/rk3566_ddr_1056MHz_v1.10.bin:${BINARIES_DIR}/u-boot-spl.bin ${BINARIES_DIR}/idbloader.img
 ${mainline_mkimage} -C none -A arm -T script -d ${BOARD_DIR}/boot.cmd ${BOOT_DIR}/boot.scr
 
-mkdir -p ${TARGET_DIR}/vendor/etc
 cp -r ${BOARD_DIR}/firmware/* ${TARGET_DIR}/lib/firmware
+mkdir -p ${TARGET_DIR}/vendor/etc
+rm -f ${TARGET_DIR}/vendor/etc/firmware
 ln -sf /lib/firmware ${TARGET_DIR}/vendor/etc/firmware
 
 mkdir -p ${BOOT_DIR}/overlays
