@@ -49,6 +49,8 @@ prepare_ap_ifaces() {
 start_hostapd() {
     msg_begin "Starting hostapd"
 
+    rfkill unblock wlan &>/dev/null
+
     # wait up to 5 seconds for interface
     count=0
     while ! ifconfig ${iface} >/dev/null 2>&1; do
