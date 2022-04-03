@@ -25,6 +25,13 @@ define SKELETON_INIT_COMMON_INSTALL_TARGET_CMDS
 		$(TARGET_DIR_WARNING_FILE)
 endef
 
+define SKELETON_INIT_CLEANUP
+	board/common/cleanup.sh $(TARGET_DIR)
+	board=$(shell basename $(shell dirname $(TARGET_DIR))) \
+	test -x board/$${board}/cleanup.sh && board/$${board}/cleanup.sh $(TARGET_DIR) || true
+endef
+SKELETON_INIT_COMMON_TARGET_FINALIZE_HOOKS += SKELETON_INIT_CLEANUP
+
 # We don't care much about what goes in staging, as long as it is
 # correctly setup for merged/non-merged /usr. The simplest is to
 # fill it in with the content of the skeleton.

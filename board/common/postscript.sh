@@ -14,12 +14,6 @@ if [ -x ${BOARD_DIR}/postscript.sh ]; then
     ${BOARD_DIR}/postscript.sh
 fi
 
-# cleanups
-${COMMON_DIR}/cleanups.sh
-if [ -x ${BOARD_DIR}/cleanups.sh ]; then
-    ${BOARD_DIR}/cleanups.sh
-fi
-
 # transform /var contents as needed
 rm -rf ${TARGET}/var/cache
 rm -rf ${TARGET}/var/lib

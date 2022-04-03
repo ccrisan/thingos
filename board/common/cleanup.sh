@@ -1,9 +1,8 @@
 #!/bin/bash
 
-if [ -z "${TARGET}" ]; then
-    echo "this script must be invoked from postscript.sh"
-    exit 1
-fi
+TARGET=$1
+
+test -n "${TARGET}" || exit 1
 
 find ${TARGET} -name '.empty' | xargs -r rm
 
@@ -23,7 +22,6 @@ rm -rf ${TARGET}/etc/fstab
 rm -f ${TARGET}/etc/rc_maps.cfg
 rm -f ${TARGET}/etc/udev/hwdb.d/20-pci-vendor-model.hwdb
 rm -f ${TARGET}/etc/os-release
-rm -f ${TARGET}/etc/hostapd.conf
 rm -f ${TARGET}/etc/timezone
 
 rm -f ${TARGET}/etc/cron.d/e2scrub_all

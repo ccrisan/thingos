@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 radxa_mkimage="${BUILD_DIR}/uboot-custom/tools/mkimage"
 mainline_mkimage="${HOST_DIR}/bin/mkimage"
