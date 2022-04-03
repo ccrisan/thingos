@@ -61,12 +61,21 @@ start_hostapd() {
             return 1
         fi
     done
+    
+    run_conf=/var/run/hostapd.conf
+    cp ${CONF} ${run_conf}
+    
+    # Replace placeholders
+    hostname=$(hostname)
+    sed -ri "s/^ssid=(.*)%h(.*)$/ssid=\1${hostname}\2/" ${run_conf}
+    sed -ri "s/^interface=%i$/interface=${OS_AP}/" ${run_conf}
 
-    iface=$(cat ${CONF} | grep interface | cut -d '=' -f 2)
+    # Determine Wi-Fi driver
+    iface=$(cat ${run_conf} | grep interface | cut -d '=' -f 2)
     module=$(basename $(readlink /sys/class/net/${iface}/device/driver/module 2>/dev/null) 2>/dev/null)
 
     iwconfig ${iface} power off &> /dev/null
-    ${PROG} ${CONF} &> ${LOG} &
+    ${PROG} ${run_conf} &> ${LOG} &
 
     if [[ "${LINK_WATCH}" == "true" ]]; then
         watch &
