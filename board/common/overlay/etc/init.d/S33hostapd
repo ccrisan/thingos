@@ -4,6 +4,10 @@ SYS_CONF="/etc/hostapd.conf"
 BOOT_CONF="/boot/hostapd.conf"
 CONF="/data/etc/hostapd.conf"
 
+SYS_CP_CONF="/etc/captive-portal.conf"
+BOOT_CP_CONF="/boot/captive-portal.conf"
+CP_CONF="/data/etc/captive-portal.conf"
+
 LOG="/var/log/hostapd.log"
 PROG="/usr/sbin/hostapd"
 
@@ -15,6 +19,10 @@ test -x ${PROG} || exit 0
 test -n "${OS_VERSION}" || source /etc/init.d/base
 
 prepare_conf ${CONF} ${SYS_CONF} ${BOOT_CONF}
+
+test -s ${SYS_CP_CONF} && source ${SYS_CP_CONF}
+test -s ${BOOT_CP_CONF} && source ${BOOT_CP_CONF}
+test -s ${CP_CONF} && source ${CP_CONF}
 
 source ${NETWATCH_CONF}
 
@@ -49,6 +57,13 @@ prepare_ap_ifaces() {
 start_hostapd() {
     msg_begin "Starting hostapd"
 
+    if [[ "${CAPTIVE_PORTAL_ENABLED}" == true ]] && [[ -n "${CAPTIVE_PORTAL_CONFIGURED_CMD}" ]] && \
+        ${CAPTIVE_PORTAL_CONFIGURED_CMD} &>/dev/null; then
+        
+        msg_done "already configured"
+        return
+    fi
+
     rfkill unblock wlan &>/dev/null
 
     # wait up to 5 seconds for interface
@@ -82,6 +97,11 @@ start_hostapd() {
     fi
 
     test -n "${module}" && msg_done "done (${module})"|| msg_done
+
+    timeout=${CAPTIVE_PORTAL_TIMEOUT:-0}
+    if [[ "${CAPTIVE_PORTAL_ENABLED}" == true ]] && [[ ${timeout} -gt 0 ]]; then
+        sleep ${timeout} && stop_hostapd &>/dev/null &
+    fi
 }
 
 stop_hostapd() {
