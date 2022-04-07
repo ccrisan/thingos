@@ -41,34 +41,20 @@ watch() {
     done
 }
 
-prepare_ap_ifaces() {
-    wifi_ifaces=$(ip link | grep -oE 'wlan[[:digit:]]')
-    msg_begin "Preparing AP interfaces"
-    ap_ifaces=""
-    for iface in ${wifi_ifaces}; do
-        ap_iface=ap${iface: -1}
-        if iw dev ${iface} interface add ${ap_iface} type __ap &>/dev/null; then
-            ap_ifaces+="${ap_iface} "
-        fi
-    done
-    msg_done "${ap_ifaces:-none}"
-}
-
 start_hostapd() {
-    msg_begin "Starting hostapd"
-
     if [[ "${CAPTIVE_PORTAL_ENABLED}" == true ]] && [[ -n "${CAPTIVE_PORTAL_CONFIGURED_CMD}" ]] && \
         ${CAPTIVE_PORTAL_CONFIGURED_CMD} &>/dev/null; then
-        
-        msg_done "already configured"
+
         return
     fi
 
     rfkill unblock wlan &>/dev/null
 
+    msg_begin "Preparing AP interfaces"
+
     # wait up to 5 seconds for interface
     count=0
-    while ! ifconfig ${iface} >/dev/null 2>&1; do
+    while ! ifconfig ${OS_WLAN} >/dev/null 2>&1; do
         sleep 1
         count=$((${count} + 1))
         if [[ ${count} -ge 5 ]]; then
@@ -77,6 +63,18 @@ start_hostapd() {
         fi
     done
     
+    wifi_ifaces=$(ip link | grep -oE 'wlan[[:digit:]]')
+    ap_ifaces=""
+    for iface in ${wifi_ifaces}; do
+        ip link set ${iface} up
+        ap_iface=ap${iface: -1}
+        if iw dev ${iface} interface add ${ap_iface} type __ap &>/dev/null; then
+            ap_ifaces+="${ap_iface} "
+        fi
+    done
+    msg_done "${ap_ifaces:-none}"
+
+    msg_begin "Starting hostapd"
     run_conf=/var/run/hostapd.conf
     cp ${CONF} ${run_conf}
     
@@ -90,9 +88,10 @@ start_hostapd() {
     module=$(basename $(readlink /sys/class/net/${iface}/device/driver/module 2>/dev/null) 2>/dev/null)
 
     iwconfig ${iface} power off &> /dev/null
+    iw ${iface} set power_save off &> /dev/null
     ${PROG} ${run_conf} &> ${LOG} &
 
-    if [[ "${LINK_WATCH}" == "true" ]]; then
+    if [[ "${LINK_WATCH}" == "true" ]] && ! [[ "${CAPTIVE_PORTAL_ENABLED}" == true ]]; then
         watch &
     fi
 
@@ -112,8 +111,6 @@ stop_hostapd() {
 }
 
 start() {
-    prepare_ap_ifaces
-    
     if [[ -s ${CONF} ]]; then
         start_hostapd
     fi
@@ -143,3 +140,6 @@ case "$1" in
         echo "Usage: $0 {start|stop|restart}"
         exit 1
 esac
+
+# When captive portal is enabled, continue booting even if hostapd hasn't started correctly
+test "${CAPTIVE_PORTAL_ENABLED}" == true && exit 0
