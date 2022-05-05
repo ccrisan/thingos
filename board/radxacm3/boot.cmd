@@ -28,7 +28,6 @@ for overlay_file in ${overlays}; do
 done
 
 echo "Initrd size is ${initrd_size}"
-echo "v12"
 if test -n "${initrd}"; then
     booti ${kernel_addr_r} ${ramdisk_addr_r}:${initrd_size} ${fdt_addr_r}
 else

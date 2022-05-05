@@ -34,8 +34,10 @@ remount_rw() {
 }
 
 mk_tty_login() {
-    test -z "${OS_TTY_LOGIN}" && OS_TTY_LOGIN=tty1
-    ln -sf /dev/${OS_TTY_LOGIN} /dev/ttylogin
+    console=$(grep -oE 'console=[a-zA-Z0-9_/-]+' /proc/cmdline | cut -d = -f 2)
+    if [[ -z "${console}" ]]; then console=/dev/console; fi
+    if ! [[ ${console} == /* ]]; then console=/dev/${console}; fi
+    ln -sf ${console} /dev/ttylogin
 }
 
 case "$1" in

@@ -64,9 +64,6 @@ mkdir -p /data/.emmc_boot
 mount ${emmc_dev}p1 /data/.emmc_boot
 cd /data/.emmc_boot
 
-msg "Adjusting EMMC root device"
-sed -i "s,${DISK_DEV},${emmc_dev},g" *.@(txt|ini|conf)
-
 if arg_present "--net-config"; then
     msg "Copying network configuration"
     for file in ${NET_CONFIG_FILES[*]}; do

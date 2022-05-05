@@ -1,0 +1,4 @@
+kernel=zImage
+fdt=sun8i-h3-nanopi-r1.dtb
+overlays=sun8i-h3-uart0
+cmdline=rootwait ro rootflags=noload console=ttyS0,115200 panic=10 quiet loglevel=1

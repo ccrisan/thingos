@@ -11,8 +11,6 @@ CP_CONF="/data/etc/captive-portal.conf"
 LOG="/var/log/hostapd.log"
 PROG="/usr/sbin/hostapd"
 
-NETWATCH_CONF="/etc/netwatch.conf"
-
 
 test -x ${PROG} || exit 0
 
@@ -24,30 +22,25 @@ test -s ${SYS_CP_CONF} && source ${SYS_CP_CONF}
 test -s ${BOOT_CP_CONF} && source ${BOOT_CP_CONF}
 test -s ${CP_CONF} && source ${CP_CONF}
 
-source ${NETWATCH_CONF}
 
-
-running() {
+function running() {
     killall -0 $(basename ${PROG}) &> /dev/null
 }
 
-watch() {
+function watch_configured() {
     while true; do
-        sleep 5
-        if ! running; then
-            panic_action hostapd "service dead"
-            break
+        sleep ${CAPTIVE_PORTAL_CONFIGURED_INTERVAL}
+        if ! running && ! ${CAPTIVE_PORTAL_CONFIGURED_CMD} &>/dev/null; then
+            logger -t hostapd "not configured, starting captive portal"
+            start_hostapd &>/dev/null
+        elif running && ${CAPTIVE_PORTAL_CONFIGURED_CMD} &>/dev/null; then
+            logger -t hostapd "configured, stopping captive portal"
+            stop_hostapd &>/dev/null
         fi
     done
 }
 
-start_hostapd() {
-    if [[ "${CAPTIVE_PORTAL_ENABLED}" == true ]] && [[ -n "${CAPTIVE_PORTAL_CONFIGURED_CMD}" ]] && \
-        ${CAPTIVE_PORTAL_CONFIGURED_CMD} &>/dev/null; then
-
-        return
-    fi
-
+function start_hostapd() {
     rfkill unblock wlan &>/dev/null
 
     msg_begin "Preparing AP interfaces"
@@ -91,35 +84,50 @@ start_hostapd() {
     iw ${iface} set power_save off &> /dev/null
     ${PROG} ${run_conf} &> ${LOG} &
 
-    if [[ "${LINK_WATCH}" == "true" ]] && ! [[ "${CAPTIVE_PORTAL_ENABLED}" == true ]]; then
-        watch &
-    fi
-
     test -n "${module}" && msg_done "done (${module})"|| msg_done
-
-    timeout=${CAPTIVE_PORTAL_TIMEOUT:-0}
-    if [[ "${CAPTIVE_PORTAL_ENABLED}" == true ]] && [[ ${timeout} -gt 0 ]]; then
-        sleep ${timeout} && stop_hostapd &>/dev/null &
-    fi
 }
 
-stop_hostapd() {
+function stop_hostapd() {
     msg_begin "Stopping hostpad"
     killall $(basename ${PROG}) &>/dev/null
-    ps | grep $(basename ${PROG}) | grep -v $$ | grep -v grep | tr -s ' ' | sed -e 's/^\s//' | cut -d ' ' -f 1 | xargs -r kill
     msg_done
 }
 
-start() {
-    if [[ -s ${CONF} ]]; then
-        start_hostapd
+function start() {
+    if ! [[ -s ${CONF} ]]; then
+        return
     fi
+
+    if [[ "${CAPTIVE_PORTAL_ENABLED}" == true ]] && \
+       [[ -n "${CAPTIVE_PORTAL_CONFIGURED_CMD}" ]] && \
+       [[ -z "${CAPTIVE_PORTAL_CONFIGURED_INTERVAL}" ]] && \
+       ${CAPTIVE_PORTAL_CONFIGURED_CMD} &>/dev/null; then
+       
+        logger -t hostapd "unit is configured"
+        return
+    fi
+
+    if [[ "${CAPTIVE_PORTAL_ENABLED}" == true ]]; then
+        timeout=${CAPTIVE_PORTAL_TIMEOUT:-0}
+        if [[ -n "${CAPTIVE_PORTAL_CONFIGURED_INTERVAL}" ]]; then
+            logger -t hostapd "configuration watch every ${CAPTIVE_PORTAL_CONFIGURED_INTERVAL}s"
+            watch_configured &
+        elif [[ ${timeout} -gt 0 ]]; then
+            logger -t hostapd "will stop after ${timeout}s"
+            sleep ${timeout} && stop_hostapd &>/dev/null &
+        fi
+    fi
+
+    start_hostapd
 }
 
-stop() {
-    if [[ -s ${CONF} ]]; then
-        stop_hostapd
+function stop() {
+    if ! [[ -s ${CONF} ]]; then
+        return
     fi
+
+    stop_hostapd
+    ps | grep $(basename ${PROG}) | grep -v $$ | grep -v grep | tr -s ' ' | sed -e 's/^\s//' | cut -d ' ' -f 1 | xargs -r kill
 }
 
 case "$1" in
