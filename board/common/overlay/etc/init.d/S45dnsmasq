@@ -24,16 +24,9 @@ test -s ${BOOT_CP_CONF} && source ${BOOT_CP_CONF}
 test -s ${CP_CONF} && source ${CP_CONF}
 
 
-start() {
+function start() {
     msg_begin "Starting dnsmasq"
     
-    if [[ "${CAPTIVE_PORTAL_ENABLED}" == true ]] && [[ -n "${CAPTIVE_PORTAL_CONFIGURED_CMD}" ]] && \
-        ${CAPTIVE_PORTAL_CONFIGURED_CMD} &>/dev/null; then
-        
-        msg_done "already configured"
-        return
-    fi
-
     run_conf=/var/run/dnsmasq.conf
     cp ${CONF} ${run_conf}
 
@@ -49,14 +42,9 @@ start() {
 
     ${PROG} -C ${run_conf} --log-facility=${LOG}
     test $? == 0 && msg_done || msg_fail
-    
-    timeout=${CAPTIVE_PORTAL_TIMEOUT:-0}
-    if [[ "${CAPTIVE_PORTAL_ENABLED}" == true ]] && [[ ${timeout} -gt 0 ]]; then
-        sleep ${timeout} && stop &>/dev/null &
-    fi
 }
 
-stop() {
+function stop() {
     msg_begin "Stopping dnsmasq"
     killall -q $(basename ${PROG})
     test $? == 0 && msg_done || msg_fail
@@ -80,4 +68,3 @@ case "$1" in
         echo "Usage: $0 {start|stop|restart}"
         exit 1
 esac
-
