@@ -55,6 +55,8 @@ start() {
 
     msg_begin "Starting wpa_supplicant"
 
+    rfkill unblock wlan &>/dev/null
+
     # wait up to 5 seconds for interface
     count=0
     while ! ifconfig ${OS_WLAN} >/dev/null 2>&1; do

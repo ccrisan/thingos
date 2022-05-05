@@ -4,7 +4,7 @@
 #
 ################################################################################
 
-GST1_PLUGINS_BAD_VERSION = 1.18.1
+GST1_PLUGINS_BAD_VERSION = 1.18.5
 GST1_PLUGINS_BAD_SOURCE = gst-plugins-bad-$(GST1_PLUGINS_BAD_VERSION).tar.xz
 GST1_PLUGINS_BAD_SITE = https://gstreamer.freedesktop.org/src/gst-plugins-bad
 GST1_PLUGINS_BAD_INSTALL_STAGING = YES
@@ -12,6 +12,8 @@ GST1_PLUGINS_BAD_INSTALL_STAGING = YES
 # GST1_PLUGINS_BAD_LICENSE_FILES if enabled.
 GST1_PLUGINS_BAD_LICENSE_FILES = COPYING
 GST1_PLUGINS_BAD_LICENSE = LGPL-2.0+
+GST1_PLUGINS_BAD_CPE_ID_VENDOR = freedesktop
+GST1_PLUGINS_BAD_CPE_ID_PRODUCT = gst-plugins-bad
 
 GST1_PLUGINS_BAD_CFLAGS = $(TARGET_CFLAGS) -std=c99 -D_GNU_SOURCE
 GST1_PLUGINS_BAD_LDFLAGS = $(TARGET_LDFLAGS) $(TARGET_NLS_LIBS)
@@ -57,12 +59,11 @@ GST1_PLUGINS_BAD_CONF_OPTS += \
 	-Dofa=disabled \
 	-Dopenexr=disabled \
 	-Dopenni2=disabled \
-	-Dteletextdec=disabled \
+	-Dteletext=disabled \
 	-Dwildmidi=disabled \
 	-Dsmoothstreaming=disabled \
 	-Dsoundtouch=disabled \
 	-Dgme=disabled \
-	-Dvdpau=disabled \
 	-Dspandsp=disabled \
 	-Dsvthevcenc=disabled \
 	-Dtranscode=disabled \
@@ -689,6 +690,16 @@ GST1_PLUGINS_BAD_CONF_OPTS += -Dsbc=enabled
 GST1_PLUGINS_BAD_DEPENDENCIES += sbc
 else
 GST1_PLUGINS_BAD_CONF_OPTS += -Dsbc=disabled
+endif
+
+ifeq ($(BR2_PACKAGE_GST1_PLUGINS_BAD_PLUGIN_SCTP),y)
+GST1_PLUGINS_BAD_CONF_OPTS += \
+	-Dsctp=enabled \
+	-Dsctp-internal-usrsctp=enabled
+else
+GST1_PLUGINS_BAD_CONF_OPTS += \
+	-Dsctp=disabled \
+	-Dsctp-internal-usrsctp=disabled
 endif
 
 ifeq ($(BR2_PACKAGE_GST1_PLUGINS_BAD_PLUGIN_SHM),y)

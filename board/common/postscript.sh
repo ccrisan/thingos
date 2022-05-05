@@ -7,18 +7,11 @@ export BOARD=$(basename $(dirname ${TARGET}))
 export COMMON_DIR=$(dirname $0)
 export BOARD_DIR=${COMMON_DIR}/../${BOARD}
 export BOOT_DIR=${TARGET}/../images/boot/
-export IMG_DIR=${TARGET}/../images
 
 mkdir -p ${BOOT_DIR}
 
 if [ -x ${BOARD_DIR}/postscript.sh ]; then
     ${BOARD_DIR}/postscript.sh
-fi
-
-# cleanups
-${COMMON_DIR}/cleanups.sh
-if [ -x ${BOARD_DIR}/cleanups.sh ]; then
-    ${BOARD_DIR}/cleanups.sh
 fi
 
 # transform /var contents as needed

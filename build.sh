@@ -80,22 +80,17 @@ if ! [ -f "$outputdir/.config" ]; then
 fi
 
 if [ "$target" == "mkimage" ]; then
-    "$boarddir/mkimage.sh"
+    "${basedir}/support/scripts/mkimage.sh" ${board}
 
 elif [ "$target" == "mkrelease" ]; then
-    test -f "$outputdir/images/$osname-$board.img" || "$boarddir/mkimage.sh"
+    test -f "$outputdir/images/$osname-$board.img" || "${basedir}/support/scripts/mkimage.sh" ${board}
     cp "$outputdir/images/$osname-$board.img" "$outputdir/images/$osname-$board-$osversion.img"
-    
+
     echo "preparing compressed xz image"
     rm -f "$outputdir/images/$osname-$board-$osversion.img.xz"
     xz -6ek -T 0 "$outputdir/images/$osname-$board-$osversion.img"
     echo "your xz image is ready at $outputdir/images/$osname-$board-$osversion.img.xz"
-    
-    echo "preparing compressed gz image"
-    rm -f "$outputdir/images/$osname-$board-$osversion.img.gz"
-    $gzip "$outputdir/images/$osname-$board-$osversion.img"
-    echo "your gz image is ready at $outputdir/images/$osname-$board-$osversion.img.gz"
-    
+
     rm -f "$outputdir/images/$osname-$board-$osversion.img"
 
 elif [ "$target" == "clean-target" ]; then
@@ -138,7 +133,7 @@ elif [[ "$target" == initramfs* ]]; then
     extra_args=${target:10}
     $0 "${board}_initramfs" "$extra_args"
     if [ -z "$extra_args" ] && [ -x "$boarddir/cpinitramfs.sh" ]; then
-        IMG_DIR=$basedir/output/${board}_initramfs/images/ BOARD_DIR=$boarddir "$boarddir/cpinitramfs.sh"
+        BINARIES_DIR=$basedir/output/${board}_initramfs/images/ BOARD_DIR=$boarddir "$boarddir/cpinitramfs.sh"
     fi
 
 elif [ "$target" == "all" ]; then
@@ -147,10 +142,9 @@ elif [ "$target" == "all" ]; then
 
 elif [ -n "$target" ]; then
     prepare_target_dir
-    make O="$outputdir" "$target"
+    make O="$outputdir" $target
 
 else  # if [ -z "$target ]
     $0 "$board" all
     echo "build successful"
 fi
-

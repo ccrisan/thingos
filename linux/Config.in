@@ -28,10 +28,10 @@ choice
 	prompt "Kernel version"
 
 config BR2_LINUX_KERNEL_LATEST_VERSION
-	bool "Latest version (5.9)"
+	bool "Latest version (5.15)"
 
 config BR2_LINUX_KERNEL_LATEST_CIP_VERSION
-	bool "Latest CIP SLTS version (4.19.152-cip37)"
+	bool "Latest CIP SLTS version (4.19.198-cip54)"
 	help
 	  CIP launched in the spring of 2016 to address the needs of
 	  organizations in industries such as power generation and
@@ -50,7 +50,7 @@ config BR2_LINUX_KERNEL_LATEST_CIP_VERSION
 	  https://www.cip-project.org
 
 config BR2_LINUX_KERNEL_LATEST_CIP_RT_VERSION
-	bool "Latest CIP RT SLTS version (4.19.152-cip37-rt16)"
+	bool "Latest CIP RT SLTS version (4.19.198-cip54-rt21)"
 	help
 	  Same as the CIP version, but this is the PREEMPT_RT realtime
 	  variant.
@@ -125,9 +125,9 @@ endif
 
 config BR2_LINUX_KERNEL_VERSION
 	string
-	default "5.9.14" if BR2_LINUX_KERNEL_LATEST_VERSION
-	default "4.19.152-cip37" if BR2_LINUX_KERNEL_LATEST_CIP_VERSION
-	default "4.19.152-cip37-rt16" if BR2_LINUX_KERNEL_LATEST_CIP_RT_VERSION
+	default "5.15.6" if BR2_LINUX_KERNEL_LATEST_VERSION
+	default "4.19.198-cip54" if BR2_LINUX_KERNEL_LATEST_CIP_VERSION
+	default "4.19.198-cip54-rt21" if BR2_LINUX_KERNEL_LATEST_CIP_RT_VERSION
 	default BR2_LINUX_KERNEL_CUSTOM_VERSION_VALUE \
 		if BR2_LINUX_KERNEL_CUSTOM_VERSION
 	default "custom" if BR2_LINUX_KERNEL_CUSTOM_TARBALL
@@ -263,6 +263,10 @@ config BR2_LINUX_KERNEL_IMAGE
 	bool "Image"
 	depends on BR2_aarch64 || BR2_riscv
 
+config BR2_LINUX_KERNEL_IMAGEGZ
+	bool "Image.gz"
+	depends on BR2_aarch64 || BR2_riscv
+
 config BR2_LINUX_KERNEL_LINUX_BIN
 	bool "linux.bin"
 	depends on BR2_microblaze
@@ -324,6 +328,10 @@ config BR2_LINUX_KERNEL_XZ
 
 config BR2_LINUX_KERNEL_ZSTD
 	bool "zstd compression"
+
+config BR2_LINUX_KERNEL_UNCOMPRESSED
+	bool "uncompressed"
+	depends on BR2_s390x
 
 endchoice
 
@@ -403,7 +411,7 @@ config BR2_LINUX_KERNEL_INTREE_DTS_NAME
 config BR2_LINUX_KERNEL_CUSTOM_DTS_PATH
 	string "Out-of-tree Device Tree Source file paths"
 	help
-	  Path to to out-of-tree device tree source files.
+	  Path to the out-of-tree device tree source files.
 	  You can provide a list of dts paths to copy and
 	  build, separated by spaces.
 

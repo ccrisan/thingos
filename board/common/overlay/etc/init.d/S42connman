@@ -7,7 +7,7 @@ LOG="/var/log/connman.log"
 LIB_DIR="/var/lib/connman"
 RUN_DIR="/var/run/connman"
 ONLINE_TIMEOUT=20
-ONLINE_TIMEOUT_INITIAL=10
+ONLINE_TIMEOUT_INITIAL=20
 ONLINE_TIMEOUT_CHECK=5
 ONLINE_HANDLER_SCRIPT="/usr/libexec/connman-online-handler"
 
@@ -41,7 +41,7 @@ start() {
 
     mkdir -p ${RUN_DIR}
     ln -sf ${RUN_DIR}/resolv.conf /tmp/resolv.conf
-
+    
     ifconfig lo up
     ${PROG} -n -r &> ${LOG} &
     if grep -qE '(Favorite)|(AutoConnect)=true' ${LIB_DIR}/*/settings 2>/dev/null; then
@@ -58,7 +58,7 @@ start() {
 
 stop() {
     msg_begin "Stopping connman"
-    killall -q $(basename ${PROG})
+    ps | grep connman | grep -v $$ | grep -v grep | tr -s ' ' | sed -e 's/^\s//' | cut -d ' ' -f 1 | xargs -r kill
     msg_done
 }
 
@@ -74,6 +74,7 @@ case "$1" in
 
     restart)
         stop
+        sleep 2
         start
         ;;
 

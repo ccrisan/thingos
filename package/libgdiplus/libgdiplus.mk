@@ -4,11 +4,12 @@
 #
 ################################################################################
 
-LIBGDIPLUS_VERSION = 5.6
+LIBGDIPLUS_VERSION = 6.0.5
 LIBGDIPLUS_SITE = $(call github,mono,libgdiplus,$(LIBGDIPLUS_VERSION))
 
 LIBGDIPLUS_LICENSE = MIT
 LIBGDIPLUS_LICENSE_FILES = LICENSE
+LIBGDIPLUS_CPE_ID_VENDOR = mono-project
 
 LIBGDIPLUS_INSTALL_STAGING = YES
 

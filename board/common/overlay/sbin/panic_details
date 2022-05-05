@@ -4,7 +4,7 @@ source /etc/init.d/panic
 
 
 if ! [[ -s ${PANIC_DETAILS_FILE} ]]; then
-    echo "No panic recent"
+    echo "No recent panic"
     exit
 fi
 

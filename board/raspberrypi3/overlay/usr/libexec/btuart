@@ -1,0 +1,26 @@
+#!/bin/bash
+
+function btuart_start() {
+    if ! [ -d "/proc/device-tree/soc/gpio@7e200000/uart0_pins" ]; then
+        touch ${NO_ON_BOARD_BT}
+        exit 0  # no rpi bluetooth detected
+    fi
+
+    if [[ "$(cat /proc/device-tree/aliases/uart0)" = "$(cat /proc/device-tree/aliases/serial1)" ]] ; then
+        if [[ "$(wc -c /proc/device-tree/soc/gpio@7e200000/uart0_pins/brcm\,pins | cut -f 1 -d ' ')" = "16" ]]; then
+            /usr/bin/btattach -B /dev/serial1 -P bcm -S 3000000 &>/dev/null
+        else
+            /usr/bin/btattach -B /dev/serial1 -P bcm -S 921600 -N &>/dev/null
+        fi
+    else
+        /usr/bin/btattach -B /dev/serial1 -P bcm -S 460800 -N &>/dev/null
+    fi
+}
+
+function btuart_stop() {
+    if ! [ -d "/proc/device-tree/soc/gpio@7e200000/uart0_pins" ]; then
+        exit 0  # no rpi bluetooth detected
+    fi
+
+    killall btattach &>/dev/null
+}

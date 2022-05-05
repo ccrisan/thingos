@@ -38,7 +38,7 @@ case "$1" in
         test -s /data/etc/shadow || set_empty_root_passwd
         test -s /data/etc/version || copy_version
         test -s /data/etc/localtime || set_utc_timezone
-        copy_data_overlay
+        test -n "$(ls -A /usr/share/dataoverlay 2>/dev/null)" && copy_data_overlay
         ;;
 
     stop)
@@ -50,4 +50,4 @@ case "$1" in
         exit 1
 esac
 
-exit $?
+exit 0

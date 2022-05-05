@@ -352,6 +352,12 @@ function run_pre_upgrade() {
     losetup -o $((root_info[0] * 512)) ${ROOT_LOOP} ${FW_FILE_EXTR}
     mount ${BOOT_LOOP} ${TMP_BOOT_DIR}
     mount ${ROOT_LOOP} ${TMP_ROOT_DIR}
+    
+    if [[ -f ${TMP_ROOT_DIR}/usr/libexec/fw-restore-boot-cfg ]]; then
+        cp ${TMP_ROOT_DIR}/usr/libexec/fw-restore-boot-cfg /usr/libexec/fw-restore-boot-cfg
+    else
+        rm -f /usr/libexec/fw-restore-boot-cfg
+    fi
 
     if [[ -d ${pre_upgrade} ]]; then
         for script in ${pre_upgrade}/*.sh; do
@@ -524,10 +530,10 @@ function do_flash_reboot() {
         /usr/libexec/fw-prepare-boot
     fi
 
-    sync
-    busybox reboot &
-    sleep 10
-    echo b > /proc/sysrq-trigger
+    echo "rebooting..."
+    test -x /sbin/reboot.bak && /sbin/reboot.bak || /sbin/reboot &
+    # guard forced reboot after 3 minutes
+    sleep 180 && echo b > /proc/sysrq-trigger
 
     exit 0
 }

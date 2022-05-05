@@ -1,4 +1,4 @@
 # md5 from http://www.erlang.org/download/MD5, sha256 locally computed
-md5 b2b48dad6e69c1e882843edbf2abcfd3  otp_src_22.2.tar.gz
-sha256 89c2480cdac566065577c82704a48e10f89cf2e6ca5ab99e1cf80027784c678f  otp_src_22.2.tar.gz
+md5 d6660705f01afbe3466c0a5de21ab361  otp_src_23.3.tar.gz
+sha256 3c888d8f46124e134b75a9ba5d845f079020b7198ed2de64411e183d07e9002a  otp_src_23.3.tar.gz
 sha256 809fa1ed21450f59827d1e9aec720bbc4b687434fa22283c6cb5dd82a47ab9c0  LICENSE.txt

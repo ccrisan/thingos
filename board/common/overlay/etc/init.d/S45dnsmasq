@@ -4,6 +4,10 @@ SYS_CONF="/etc/dnsmasq.conf"
 BOOT_CONF="/boot/dnsmasq.conf"
 CONF="/data/etc/dnsmasq.conf"
 
+SYS_CP_CONF="/etc/captive-portal.conf"
+BOOT_CP_CONF="/boot/captive-portal.conf"
+CP_CONF="/data/etc/captive-portal.conf"
+
 LOG="/var/log/dnsmasq.log"
 PROG="/usr/sbin/dnsmasq"
 
@@ -15,18 +19,41 @@ test -n "${OS_VERSION}" || source /etc/init.d/base
 prepare_conf ${CONF} ${SYS_CONF} ${BOOT_CONF}
 test -s ${CONF} || exit 0
 
+test -s ${SYS_CP_CONF} && source ${SYS_CP_CONF}
+test -s ${BOOT_CP_CONF} && source ${BOOT_CP_CONF}
+test -s ${CP_CONF} && source ${CP_CONF}
+
 
 start() {
     msg_begin "Starting dnsmasq"
     
-    iface=$(cat ${CONF} | grep interface | cut -d '=' -f 2)
-    ip=$(cat ${CONF} | grep range | cut -d '=' -f 2 | cut -d '.' -f 1,2,3).1
+    if [[ "${CAPTIVE_PORTAL_ENABLED}" == true ]] && [[ -n "${CAPTIVE_PORTAL_CONFIGURED_CMD}" ]] && \
+        ${CAPTIVE_PORTAL_CONFIGURED_CMD} &>/dev/null; then
+        
+        msg_done "already configured"
+        return
+    fi
+
+    run_conf=/var/run/dnsmasq.conf
+    cp ${CONF} ${run_conf}
+
+    sed -ri "s/^interface=%i$/interface=${OS_AP}/" ${run_conf}
+    ip=$(cat ${run_conf} | grep range | cut -d '=' -f 2 | cut -d '.' -f 1,2,3).1
+    iface=$(cat ${run_conf} | grep interface | cut -d '=' -f 2)
+    
+    if [[ "${CAPTIVE_PORTAL_ENABLED}" == true ]]; then
+        echo "address=/#/${ip}" >> ${run_conf}
+    fi
     
     ifconfig ${iface} ${ip}
 
-    ${PROG} -C ${CONF} --log-facility=${LOG}
-
+    ${PROG} -C ${run_conf} --log-facility=${LOG}
     test $? == 0 && msg_done || msg_fail
+    
+    timeout=${CAPTIVE_PORTAL_TIMEOUT:-0}
+    if [[ "${CAPTIVE_PORTAL_ENABLED}" == true ]] && [[ ${timeout} -gt 0 ]]; then
+        sleep ${timeout} && stop &>/dev/null &
+    fi
 }
 
 stop() {

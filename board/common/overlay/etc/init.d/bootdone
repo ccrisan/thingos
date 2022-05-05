@@ -10,4 +10,4 @@ function reset_panic() {
     echo 0 > ${PANIC_COUNTER_FILE}
 }
 
-sleep ${PANIC_REBOOT_DELAY_MAX} && reset_panic
+sleep ${PANIC_REBOOT_DELAY_MAX} && reset_panic &

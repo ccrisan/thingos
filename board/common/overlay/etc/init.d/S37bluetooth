@@ -6,8 +6,10 @@ CONF="/data/etc/bluetooth.conf"
 RUN_CONF="/var/lib/bluetooth.conf"
 
 ADAPTER="hci0"
+ADAPTER_PATH="/sys/class/bluetooth/${ADAPTER}"
+ADAPTER_TIMEOUT=10
 PROG="/usr/libexec/bluetooth/bluetoothd"
-PROG_HC="/usr/bin/hciconfig"
+PROG_CTL="/usr/bin/bluetoothctl"
 DATA_DIR="/var/lib/bluetooth"
 RUN_DATA_DIR="/data/bluetooth"
 NO_ON_BOARD_BT="/tmp/.no_on_board_bt"  # used by RPi to explicitly indicate that no on-board BT was detected
@@ -30,44 +32,57 @@ configure() {
     if ! grep -E 'Name\s*=' ${RUN_CONF} &>/dev/null; then   
         sed -ri "s/(\[General\])/\1\nName = $(hostname)/" ${RUN_CONF}
     fi
-    
-    # bring adapter up
-    ${PROG_HC} ${ADAPTER} up
 }
 
 start() {
     msg_begin "Configuring bluetooth"
 
-    # wait up to 10 seconds for device
-    count=0
-    while ! ${PROG_HC} ${ADAPTER} &>/dev/null; do
-        # on RPi boards, the absence of an on-board BT can be detected earlier, preventing 10s timeout
-        
-        count=$((count + 1))
-        if [[ ${count} -ge 10 ]] || [[ -f "${NO_ON_BOARD_BT}" ]]; then
-            msg_fail "no device"
-            logger -t bluetooth "bluetooth device not available"
-            return 0
-        fi
+    # adapter explicitly makred as unavailable from previous boot steps
+    if [[ -f "${NO_ON_BOARD_BT}" ]]; then
+        msg_fail "no adapter"
+        return 1
+    fi
 
+    # wait for adapter to be reported by OS
+    count=0
+    while ! test -e ${ADAPTER_PATH}; do
         sleep 1
+        count=$((count + 1))
+        if [[ ${count} -ge ${ADAPTER_TIMEOUT} ]]; then
+            msg_fail "no adapter"
+            return 1
+        fi
     done
-    
+
     if configure; then
         msg_done
     else
         msg_fail
         return 1
     fi
-
+    
+    rfkill unblock bluetooth &>/dev/null
+    
     msg_begin "Starting bluetoothd"
     ${PROG} &>/dev/null &
+
+    # wait for adapter to be reported by bluetoothctl
+    count=0
+    while test -z "$(${PROG_CTL} list 2>/dev/null)"; do
+        sleep 1
+        count=$((count + 1))
+        if [[ ${count} -ge ${ADAPTER_TIMEOUT} ]]; then
+            msg_fail "no adapter"
+            return 1
+        fi
+    done
+
     msg_done
 
     # if DiscoverableTimeout is set to 0, make adapter discoverable from boot time
     if grep -E '^DiscoverableTimeout\s*=\s*0$' ${RUN_CONF} &>/dev/null; then
         sleep 1
-        ${PROG_HC} ${ADAPTER} piscan
+        ${PROG_CTL} discoverable on >/dev/null
     fi
 }
 
@@ -96,5 +111,4 @@ case "$1" in
         exit 1
 esac
 
-exit $?
-
+exit 0

@@ -9,8 +9,14 @@ LIBFUSE_SOURCE = fuse-$(LIBFUSE_VERSION).tar.gz
 LIBFUSE_SITE = https://github.com/libfuse/libfuse/releases/download/fuse-$(LIBFUSE_VERSION)
 LIBFUSE_LICENSE = GPL-2.0, LGPL-2.1
 LIBFUSE_LICENSE_FILES = COPYING COPYING.LIB
+LIBFUSE_CPE_ID_VENDOR = libfuse_project
 LIBFUSE_INSTALL_STAGING = YES
-LIBFUSE_DEPENDENCIES = $(if $(BR2_PACKAGE_LIBICONV),libiconv)
+# We're patching configure.ac
+LIBFUSE_AUTORECONF = YES
+# add host-gettext for AM_ICONV macro
+LIBFUSE_DEPENDENCIES = \
+	host-gettext \
+	$(if $(BR2_PACKAGE_LIBICONV),libiconv)
 LIBFUSE_CONF_OPTS = \
 	--disable-example \
 	--enable-lib \
@@ -32,7 +38,7 @@ define LIBFUSE_INSTALL_TARGET_CMDS
 endef
 
 define LIBFUSE_DEVICES
-	/dev/fuse  c  666  0  0  10  229  0  0  -
+	/dev/fuse c 666 0 0 10 229 0 0 -
 endef
 
 define LIBFUSE_PERMISSIONS

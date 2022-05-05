@@ -1,4 +1,5 @@
-# From: https://github.com/linux-test-project/ltp/releases/download/20200930/ltp-full-20200930.tar.xz.sha1
-sha1 f380c7afe71e03eabb1de668c0399267042cb0f7  ltp-full-20200930.tar.xz
+# From: https://github.com/linux-test-project/ltp/releases/download/20210927/ltp-full-20210927.tar.xz.sha1
+sha1 dad7737f609e358c4060cb446b9cae5c026fc137  ltp-full-20210927.tar.xz
 # Locally computed
 sha256  8177f97513213526df2cf6184d8ff986c675afb514d4e68a404010521b880643  COPYING
+sha256  779e9e5cc9af4f2b3d4cb32f5439ebd635504d2c4591bf900f0942dac290ed15  ltp-full-20210927.tar.xz
