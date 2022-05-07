@@ -154,6 +154,3 @@ case "$1" in
         echo "Usage: $0 {start|stop|restart}"
         exit 1
 esac
-
-# When captive portal is enabled, continue booting even if hostapd hasn't started correctly
-test "${CAPTIVE_PORTAL_ENABLED}" == true && exit 0

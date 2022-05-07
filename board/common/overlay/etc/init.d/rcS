@@ -19,7 +19,7 @@ function run_init() {
     for i in /etc/init.d/S??* /etc/init.d/bootdone; do
         if ! [[ -x "${i}" ]]; then continue; fi
         if [[ -f /data/etc/no_$(basename ${i}) ]]; then continue; fi
-        ${i} start || break
+        ${i} start
     done
 }
 
