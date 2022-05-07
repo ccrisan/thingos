@@ -1,0 +1,23 @@
+#!/bin/bash
+
+FIRMWARE_DIR="/lib/firmware/ap6212/"
+BRCM_PATCHRAM="/usr/libexec/brcm_patchram_plus"
+UART_DEV="/dev/ttyS3"
+MAC_ADDRESS=$(cat /sys/class/net/eth0/address)  # copy MAC address from eth0
+
+function btuart_start() {
+    # Reset Bluetooth via GPIO
+    echo "Blocking BT rfkill"
+    rfkill block bluetooth
+    sleep 1
+    
+    echo "Unblocking BT rfkill"
+    rfkill unblock bluetooth
+    sleep 1
+
+    ${BRCM_PATCHRAM} --enable_hci --no2bytes --tosleep 200000 --patchram ${FIRMWARE_DIR} --bd_addr ${MAC_ADDRESS} ${UART_DEV}
+}
+
+function btuart_stop() {
+    killall $(basename ${BRCM_PATCHRAM}) &>/dev/null
+}

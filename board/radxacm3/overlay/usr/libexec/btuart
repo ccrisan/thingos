@@ -8,11 +8,11 @@ function btuart_start() {
     # Reset Bluetooth via GPIO
     echo "Blocking BT rfkill"
     rfkill block bluetooth
-    sleep 3
+    sleep 1
     
     echo "Unblocking BT rfkill"
     rfkill unblock bluetooth
-    sleep 3
+    sleep 1
 
     ${BRCM_PATCHRAM} --enable_hci --no2bytes --use_baudrate_for_download --tosleep 200000 --baudrate 1500000 --patchram ${FIRMWARE_FILE} ${UART_DEV}
 }
