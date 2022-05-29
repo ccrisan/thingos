@@ -13,7 +13,7 @@ DUMP_FILE="/var/lib/postgresql-dump.sql.gz"
 
 
 function run_pg_ctl() {
-    su ${USER} -c "pg_ctl $*"
+    su ${USER} -c "${PROG} $*"
 }
 
 
@@ -31,6 +31,19 @@ function start() {
     chown ${USER} ${LOG}
     cd ${DB_DIR}
     
+    # Remove postgresql data dir if bin/data version mismatch
+    if [[ -f ${DB_DIR}/PG_VERSION ]]; then
+        data_version=$(cat ${DB_DIR}/PG_VERSION)
+        bin_version=$(${PROG} -V | cut -d ' ' -f 3 | cut -d . -f 1)
+        if [[ "${data_version}" != "${bin_version}" ]]; then
+            msg_begin "Backing up old postgresql data directory"
+            rm -rf ${DB_DIR}.old
+            mv ${DB_DIR} ${DB_DIR}.old
+            msg_done
+        fi
+    fi
+
+    # Initialize data dir if not present
     if ! [[ -f ${DB_DIR}/PG_VERSION ]]; then
         msg_begin "Initializing postgresql data directory"
         run_pg_ctl initdb -s -D ${DB_DIR} -o \'-E UTF-8 --no-locale\' &>> ${LOG}
@@ -38,6 +51,7 @@ function start() {
         echo "include_if_exists = '${CONF}'" >> ${DB_DIR}/postgresql.conf
     fi
 
+    # Restore from dump if present
     if [[ -f ${DUMP_FILE} ]]; then
         msg_begin "Restoring postgresql data from dump"
         if gunzip < ${DUMP_FILE} | psql -U ${USER} &>> ${LOG}; then
@@ -48,6 +62,7 @@ function start() {
         fi
     fi
 
+    # Start server
     msg_begin "Starting postgresql"
     run_pg_ctl start -s -D ${DB_DIR} -l ${LOG}
     test $? == 0 && msg_done || msg_fail
