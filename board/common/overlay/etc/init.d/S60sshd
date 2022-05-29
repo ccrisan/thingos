@@ -1,4 +1,4 @@
-#!/bin/bash
+\#!/bin/bash
 
 SYS_DIR=/etc/ssh
 USER_DIR=/data/etc/ssh
@@ -45,7 +45,7 @@ start() {
     chmod go-rwx ${USER_DIR}/id_rsa* 2>/dev/null
 
     # copy system authorized keys, if present
-    test -s /etc/ssh/authorized_keys && cp /etc/ssh/authorized_keys ${USER_DIR}
+    test -f /etc/ssh/authorized_keys && test -e ${USER_DIR}/authorized_keys || cp /etc/ssh/authorized_keys ${USER_DIR}
 
     msg_begin "Starting sshd"
     
