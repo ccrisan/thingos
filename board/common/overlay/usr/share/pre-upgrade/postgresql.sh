@@ -10,6 +10,7 @@ DUMP_FILE=/var/lib/postgresql-dump.sql.gz
 
 test -x ${OLD_PG_CTL} || exit 0
 test -x ${NEW_PG_CTL} || exit 0
+cd /tmp
 su ${USER} -c "pg_ctl status -D ${DB_DIR}" > /dev/null || exit 0
 
 old_version=$(${OLD_PG_CTL} -V | cut -d ' ' -f 3 | cut -d . -f 1)

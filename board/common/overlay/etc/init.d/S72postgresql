@@ -25,12 +25,6 @@ prepare_conf ${CONF} ${SYS_CONF} ${BOOT_CONF}
 
 
 function start() {
-    mkdir -p ${DB_DIR}
-    chown -R ${USER} ${DB_DIR}
-    touch ${LOG}
-    chown ${USER} ${LOG}
-    cd ${DB_DIR}
-    
     # Remove postgresql data dir if bin/data version mismatch
     if [[ -f ${DB_DIR}/PG_VERSION ]]; then
         data_version=$(cat ${DB_DIR}/PG_VERSION)
@@ -43,6 +37,12 @@ function start() {
         fi
     fi
 
+    mkdir -p ${DB_DIR}
+    chown -R ${USER} ${DB_DIR}
+    touch ${LOG}
+    chown ${USER} ${LOG}
+    cd ${DB_DIR}
+    
     # Initialize data dir if not present
     if ! [[ -f ${DB_DIR}/PG_VERSION ]]; then
         msg_begin "Initializing postgresql data directory"
@@ -50,6 +50,11 @@ function start() {
         test $? == 0 && msg_done || msg_fail
         echo "include_if_exists = '${CONF}'" >> ${DB_DIR}/postgresql.conf
     fi
+
+    # Start server
+    msg_begin "Starting postgresql"
+    run_pg_ctl start -s -D ${DB_DIR} -l ${LOG}
+    test $? == 0 && msg_done || msg_fail
 
     # Restore from dump if present
     if [[ -f ${DUMP_FILE} ]]; then
@@ -61,11 +66,6 @@ function start() {
             msg_fail
         fi
     fi
-
-    # Start server
-    msg_begin "Starting postgresql"
-    run_pg_ctl start -s -D ${DB_DIR} -l ${LOG}
-    test $? == 0 && msg_done || msg_fail
 }
 
 function stop() {
