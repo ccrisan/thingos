@@ -1,4 +1,4 @@
-\#!/bin/bash
+#!/bin/bash
 
 SYS_DIR=/etc/ssh
 USER_DIR=/data/etc/ssh
