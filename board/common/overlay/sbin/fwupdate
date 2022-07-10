@@ -520,15 +520,28 @@ function do_flash_reboot() {
     reallocate_root_part
 
     board=$(cat ${SYS_BOARD_FILE})
+    root_info=($(cat ${ROOT_INFO_FILE}))
 
-    # the /usr/libexec/fw-prepare-boot script should be present and should
+    mkdir -p ${TMP_ROOT_DIR}
+    losetup -o $((root_info[0] * 512)) ${ROOT_LOOP} ${FW_FILE_EXTR}
+    mount ${ROOT_LOOP} ${TMP_ROOT_DIR}
+
+    # The /usr/libexec/fw-prepare-boot script should be present and should
     # make the necessary changes to the current boot configuration so that
-    # the firmware update initramfs will be used by the next boot
+    # the firmware update initramfs will be used by the next boot.
+    #
+    # We prefer to use the script coming with the new firmware.
+
     mount -o remount,rw /boot
     boot_mounted_rw=true
-    if [[ -x /usr/libexec/fw-prepare-boot ]]; then
+    if [[ -x ${TMP_ROOT_DIR}/usr/libexec/fw-prepare-boot ]]; then
+        ${TMP_ROOT_DIR}/usr/libexec/fw-prepare-boot
+    elif [[ -x /usr/libexec/fw-prepare-boot ]]; then
         /usr/libexec/fw-prepare-boot
     fi
+
+    umount ${TMP_ROOT_DIR}
+    losetup -d ${ROOT_LOOP}
 
     echo "rebooting..."
     test -x /sbin/reboot.bak && /sbin/reboot.bak || /sbin/reboot &
