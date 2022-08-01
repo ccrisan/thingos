@@ -59,11 +59,17 @@ function start() {
     # Restore from dump if present
     if [[ -f ${DUMP_FILE} ]]; then
         msg_begin "Restoring postgresql data from dump"
-        if gunzip < ${DUMP_FILE} | psql -U ${USER} &>> ${LOG}; then
-            msg_done
-            rm ${DUMP_FILE}
+        if gzip -t ${DUMP_FILE} &>/dev/null; then
+            # Remove any existing old DB backup directory to make space
+            rm -rf ${DB_DIR}.old
+            if gunzip < ${DUMP_FILE} | psql -U ${USER} &>> ${LOG}; then
+                msg_done
+                rm ${DUMP_FILE}
+            else
+                msg_fail
+            fi
         else
-            msg_fail
+            msg_fail "invalid dump file"
         fi
     fi
 }
