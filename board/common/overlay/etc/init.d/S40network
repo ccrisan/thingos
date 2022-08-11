@@ -74,37 +74,42 @@ start_lo() {
 }
 
 start_wlan() {
-    msg_begin "Configuring wireless network"
-    if ! ifconfig ${OS_WLAN} &>/dev/null; then
+    # $1 - index
+    index=$1
+    test "${index}" == 0 && index=
+    iface_var=OS_WLAN${index}
+
+    msg_begin "Configuring wireless network on ${!iface_var}"
+    if ! ifconfig ${!iface_var} &>/dev/null; then
         msg_fail "no device"
         return 1
     fi
 
-    if [[ "$(cat /sys/class/net/${OS_WLAN}/carrier 2>/dev/null)" != "1" ]]; then
+    if [[ "$(cat /sys/class/net/${!iface_var}/carrier 2>/dev/null)" != "1" ]]; then
         msg_fail "no link"
         return 1
     fi
 
     if [[ -n "${mtu}" ]]; then
-        ip link set mtu ${mtu} dev ${OS_WLAN}
+        ip link set mtu ${mtu} dev ${!iface_var}
     fi
 
-    if [[ -r ${INTERFACES_CONF} ]] && grep -q "^iface ${OS_WLAN}" ${INTERFACES_CONF}; then
-        ifup -i ${INTERFACES_CONF} ${OS_WLAN} 2>&1 | logger -t network
+    if [[ -r ${INTERFACES_CONF} ]] && grep -q "^iface ${!iface_var}" ${INTERFACES_CONF}; then
+        ifup -i ${INTERFACES_CONF} ${!iface_var} 2>&1 | logger -t network
         test ${PIPESTATUS[0]} == 0 && msg_done || msg_fail
     else
         if [[ -n "${STATIC_IP}" ]]; then
             msg_done ${STATIC_IP}
-            ifconfig ${OS_WLAN} ${STATIC_IP} up
+            ifconfig ${!iface_var} ${STATIC_IP} up
             STATIC_IP="" # won't be used again
         else
             msg_done dhcp
-            dhclient -cf "${DH_CONF}" ${OS_WLAN}
+            dhclient -cf "${DH_CONF}" ${!iface_var}
         fi
     fi
 
-    if [[ "${IP_WATCH}" == "true" ]] && ip addr show dev ${OS_WLAN} | grep inet &>/dev/null; then
-        watch_ip ${OS_WLAN} &
+    if [[ "${IP_WATCH}" == "true" ]] && ip addr show dev ${!iface_var} | grep inet &>/dev/null; then
+        watch_ip ${!iface_var} &
     fi
 }
 
@@ -186,7 +191,9 @@ start() {
     test "${OS_NETWORKLESS}" == "true" && return 0
 
     ssid=$(cat /data/etc/wpa_supplicant.conf 2>&1 | grep ssid | grep -v scan_ssid | cut -d '"' -f 2)
-    test -n "${OS_WLAN}" -a -n "${ssid}" && start_wlan && wlan_ok="ok"
+    ssid1=$(cat /data/etc/wpa_supplicant1.conf 2>&1 | grep ssid | grep -v scan_ssid | cut -d '"' -f 2)
+    test -n "${OS_WLAN}" -a -n "${ssid}" && start_wlan 0 && wlan_ok="ok"
+    test -n "${OS_WLAN1}" -a -n "${ssid1}" && start_wlan 1 && wlan_ok="ok"
     test -n "${OS_PPP}" -a -r /data/etc/ppp/modem && ifconfig | grep ${OS_PPP} &>/dev/null && ppp_ok="ok"
     def_route_ok=$(ip route get 1.1.1.1 &>/dev/null && echo "ok")
     

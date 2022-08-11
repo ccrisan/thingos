@@ -45,9 +45,16 @@ function start_hostapd() {
 
     msg_begin "Preparing AP interfaces"
 
-    # wait up to 5 seconds for interface
+    # wait up to 5 seconds for interfaces
     count=0
-    while ! ifconfig ${OS_WLAN} >/dev/null 2>&1; do
+    ifaces=${OS_WLAN}
+    test -n "${OS_WLAN1}" && ifaces+=" ${OS_WLAN1}"
+    while true; do
+        ok=true
+        for iface in ${ifaces}; do
+            ifconfig ${iface} &>/dev/null || ok=false
+        done
+        test ${ok} == true && break
         sleep 1
         count=$((${count} + 1))
         if [[ ${count} -ge 5 ]]; then
@@ -67,7 +74,7 @@ function start_hostapd() {
     done
     msg_done "${ap_ifaces:-none}"
 
-    msg_begin "Starting hostapd"
+    msg_begin "Starting hostapd on ${OS_AP}"
     run_conf=/var/run/hostapd.conf
     cp ${CONF} ${run_conf}
     

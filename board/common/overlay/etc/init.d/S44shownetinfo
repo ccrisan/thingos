@@ -25,9 +25,10 @@ show_dns() {
 
 case "$1" in
     start)
-        show_iface_ip_addr ${OS_ETH}
-        show_iface_ip_addr ${OS_WLAN}
-        show_iface_ip_addr ${OS_PPP}
+        test -n "${OS_ETH}" && show_iface_ip_addr ${OS_ETH}
+        test -n "${OS_WLAN}" && show_iface_ip_addr ${OS_WLAN}
+        test -n "${OS_WLAN1}" && show_iface_ip_addr ${OS_WLAN1}
+        test -n "${OS_PPP}" && show_iface_ip_addr ${OS_PPP}
         show_gateway
         show_dns
         ;;

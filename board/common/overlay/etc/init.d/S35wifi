@@ -4,7 +4,12 @@ SYS_CONF="/etc/wpa_supplicant.conf"
 BOOT_CONF="/boot/wpa_supplicant.conf"
 CONF="/data/etc/wpa_supplicant.conf"
 
+SYS_CONF1="/etc/wpa_supplicant1.conf"
+BOOT_CONF1="/boot/wpa_supplicant1.conf"
+CONF1="/data/etc/wpa_supplicant1.conf"
+
 LOG="/var/log/wpa_supplicant.log"
+LOG1="/var/log/wpa_supplicant1.log"
 PROG="/usr/sbin/wpa_supplicant"
 DRIVER=nl80211,wext
 
@@ -21,23 +26,36 @@ test -n "${OS_VERSION}" || source /etc/init.d/base
 source ${NETWATCH_CONF}
 
 prepare_conf ${CONF} ${SYS_CONF} ${BOOT_CONF}
-test -s ${CONF} || exit 0
+prepare_conf ${CONF1} ${SYS_CONF1} ${BOOT_CONF1}
+test -s ${CONF} || test -s ${CONF1} || exit 0
 
-ssid=$(cat ${CONF} | grep ssid | grep -v scan_ssid | cut -d '"' -f 2)
-test -n "${ssid}" || exit 0
+test -n "${OS_WLAN}" && ssid=$(cat ${CONF} 2>/dev/null | grep ssid | grep -v scan_ssid | cut -d '"' -f 2)
+test -n "${OS_WLAN1}" && ssid1=$(cat ${CONF1} 2>/dev/null | grep ssid | grep -v scan_ssid | cut -d '"' -f 2)
+test -n "${ssid}" || test -n "${ssid1}" || exit 0
 
 test "${OS_NETWORKLESS}" == "true" && exit 0
+test -n "${OS_WLAN}" || test -n "${OS_WLAN1}" || exit 0
 
 
 connected() {
-    ip link show dev ${OS_WLAN} 2>&1 | grep LOWER_UP &> /dev/null && return 0 || return 1
+    # $1 - index
+    index=$1
+    test "${index}" == 0 && index=
+    iface_var=OS_WLAN${index}
+    ssid_var=ssid${index}
+    if [[ -n "${!iface_var}" ]] && [[ -n "${!ssid_var}" ]]; then
+        ip link show dev ${!iface_var} 2>&1 | grep LOWER_UP &> /dev/null || return 1
+    fi
 }
 
 watch() {
+    # $1 - index
+    index=$1
+
     count=0
     while true; do
         sleep 5
-        if connected; then
+        if connected ${index}; then
             count=0
         else
             if [[ ${count} -lt ${LINK_WATCH_TIMEOUT} ]]; then
@@ -51,15 +69,22 @@ watch() {
 }
 
 start() {
+    # $1 - index
+    index=$1
+    test "${index}" == 0 && index=
+    iface_var=OS_WLAN${index}
+    conf_var=CONF${index}
+    log_var=LOG${index}
+
     test -n "${OS_COUNTRY}" && iw reg set ${OS_COUNTRY}
 
-    msg_begin "Starting wpa_supplicant"
+    msg_begin "Starting wpa_supplicant on ${!iface_var}"
 
     rfkill unblock wlan &>/dev/null
 
     # wait up to 5 seconds for interface
     count=0
-    while ! ifconfig ${OS_WLAN} >/dev/null 2>&1; do
+    while ! ifconfig ${!iface_var} >/dev/null 2>&1; do
         sleep 1
         count=$((${count} + 1))
         if [[ ${count} -ge 5 ]]; then
@@ -68,23 +93,23 @@ start() {
         fi
     done
     
-    module=$(basename $(readlink /sys/class/net/${OS_WLAN}/device/driver/module 2>/dev/null) 2>/dev/null)
+    module=$(basename $(readlink /sys/class/net/${!iface_var}/device/driver/module 2>/dev/null) 2>/dev/null)
 
-    iwconfig ${OS_WLAN} power off &> /dev/null
-    iw ${OS_WLAN} set power_save off &> /dev/null
+    iwconfig ${!iface_var} power off &> /dev/null
+    iw ${!iface_var} set power_save off &> /dev/null
     
-    opts="-i${OS_WLAN} -c${CONF} -D${DRIVER} -B"
+    opts="-i${!iface_var} -c${!conf_var} -D${DRIVER} -B"
     if [[ ${OS_DEBUG} == "true" ]]; then
         opts+=" -dd"
     fi
     
-    ${PROG} ${opts} &>> ${LOG}
+    ${PROG} ${opts} &>> ${!log_var}
     
     count=0
     while true; do
         sleep 1
 
-        if connected; then
+        if connected ${index}; then
             break
         fi
 
@@ -97,14 +122,19 @@ start() {
     done
 
     if [[ "${LINK_WATCH}" == "true" ]]; then
-        watch &
+        watch ${index} &
     fi
 
     test -n "${module}" && msg_done "done (${module})"|| msg_done
 }
 
 stop() {
-    msg_begin "Stopping wpa_supplicant"
+    # $1 - index
+    index=$1
+    test "${index}" == 0 && index=
+    iface_var=OS_WLAN${index}
+
+    msg_begin "Stopping wpa_supplicant on ${!iface_var}"
     killall -q $(basename ${PROG})
     ps | grep wifi | grep -v $$ | grep -v grep | tr -s ' ' | sed -e 's/^\s//' | cut -d ' ' -f 1 | xargs -r kill
     msg_done
@@ -112,24 +142,20 @@ stop() {
 
 case "$1" in
     start)
-        start
+        test -n "${OS_WLAN}" && test -n "${ssid}" && start 0
+        test -n "${OS_WLAN1}" && test -n "${ssid1}" && start 1
         ;;
         
     stop)
-        stop
+        test -n "${OS_WLAN}" && test -n "${ssid}" && stop 0
+        test -n "${OS_WLAN1}" && test -n "${ssid1}" && stop 1
         ;;
-        
-    restart)
-        stop
-        start
-        ;;
-    
+
     *)
-        echo "Usage: $0 {start|stop|restart}"
+        echo "Usage: $0 {start|stop}"
         exit 1
 esac
 
 # continue after an unsuccessfull wifi start
 # as we may still have an ethernet connection available
 exit 0
-
