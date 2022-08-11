@@ -4,8 +4,8 @@
 #
 ################################################################################
 
-SEMVER_SORT_VERSION = a4de79b7691945e1db9b21ffc5b39b751477dc4e
-SEMVER_SORT_SITE = $(call github,ccrisan,semver-sort,$(SEMVER_SORT_VERSION))
+SEMVER_SORT_VERSION = 1.1.0
+SEMVER_SORT_SITE = $(call github,ccrisan,semver-sort,version-$(SEMVER_SORT_VERSION))
 SEMVER_SORT_LICENSE = MIT
 
 define SEMVER_SORT_BUILD_CMDS
