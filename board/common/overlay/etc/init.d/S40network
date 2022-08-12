@@ -30,7 +30,7 @@ prepare_conf ${INTERFACES_CONF} ${SYS_INTERFACES_CONF} ${BOOT_INTERFACES_CONF}
 mkdir -p /var/lib/dhcp
 
 
-watch_eth() {
+function watch_eth() {
     count=0
     while true; do
         sleep 5
@@ -47,7 +47,7 @@ watch_eth() {
     done
 }
 
-watch_ip() {
+function watch_ip() {
     iface=$1
     count=0
     while true; do
@@ -65,7 +65,7 @@ watch_ip() {
     done
 }
 
-start_lo() {
+function start_lo() {
     if [[ -r ${INTERFACES_CONF} ]] && grep -q "^iface lo" ${INTERFACES_CONF}; then
         ifup -i ${INTERFACES_CONF} lo 2>&1 | logger -t network
     else
@@ -73,7 +73,7 @@ start_lo() {
     fi
 }
 
-start_wlan() {
+function start_wlan() {
     # $1 - index
     index=$1
     test "${index}" == 0 && index=
@@ -90,10 +90,6 @@ start_wlan() {
         return 1
     fi
 
-    if [[ -n "${mtu}" ]]; then
-        ip link set mtu ${mtu} dev ${!iface_var}
-    fi
-
     if [[ -r ${INTERFACES_CONF} ]] && grep -q "^iface ${!iface_var}" ${INTERFACES_CONF}; then
         ifup -i ${INTERFACES_CONF} ${!iface_var} 2>&1 | logger -t network
         test ${PIPESTATUS[0]} == 0 && msg_done || msg_fail
@@ -104,7 +100,8 @@ start_wlan() {
             STATIC_IP="" # won't be used again
         else
             msg_done dhcp
-            dhclient -cf "${DH_CONF}" ${!iface_var}
+            cp ${DH_CONF} ${DH_CONF}.${!iface_var}
+            dhclient -cf ${DH_CONF}.${!iface_var} ${!iface_var}
         fi
     fi
 
@@ -113,7 +110,7 @@ start_wlan() {
     fi
 }
 
-start_eth() {
+function start_eth() {
     msg_begin "Configuring wired network"
 
     # wait for driver
@@ -155,10 +152,6 @@ start_eth() {
         fi
     done
     
-    if [[ -n "${mtu}" ]]; then
-        ip link set mtu ${mtu} dev ${OS_ETH}
-    fi
-
     if [[ -r ${INTERFACES_CONF} ]] && grep -q "^iface ${OS_ETH}" ${INTERFACES_CONF}; then
         ifup -i ${INTERFACES_CONF} ${OS_ETH} 2>&1 | logger -t network
         test ${PIPESTATUS[0]} == 0 && msg_done || msg_fail
@@ -169,7 +162,8 @@ start_eth() {
             STATIC_IP="" # won't be used again
         else
             msg_done dhcp
-            dhclient -cf "${DH_CONF}" ${OS_ETH}
+            cp ${DH_CONF} ${DH_CONF}.${OS_ETH}
+            dhclient -cf ${DH_CONF}.${OS_ETH} ${OS_ETH}
         fi
     fi
 
@@ -182,9 +176,14 @@ start_eth() {
     fi
 }
 
-start() {
+function dhclient_reduce_request() {
+    # Disables requesting gateway, DNS, etc, strictly configuring the interface.
+    grep -q request ${DH_CONF} || echo "request subnet-mask, broadcast-address, time-offset, interface-mtu;" >> ${DH_CONF}
+}
+
+function start() {
     hostname=$(hostname)
-    echo "send host-name = \"${hostname}\";" > /var/cache/dhclient.conf
+    echo "send host-name = \"${hostname}\";" > ${DH_CONF}
 
     start_lo
 
@@ -192,9 +191,9 @@ start() {
 
     ssid=$(cat /data/etc/wpa_supplicant.conf 2>&1 | grep ssid | grep -v scan_ssid | cut -d '"' -f 2)
     ssid1=$(cat /data/etc/wpa_supplicant1.conf 2>&1 | grep ssid | grep -v scan_ssid | cut -d '"' -f 2)
-    test -n "${OS_WLAN}" -a -n "${ssid}" && start_wlan 0 && wlan_ok="ok"
-    test -n "${OS_WLAN1}" -a -n "${ssid1}" && start_wlan 1 && wlan_ok="ok"
-    test -n "${OS_PPP}" -a -r /data/etc/ppp/modem && ifconfig | grep ${OS_PPP} &>/dev/null && ppp_ok="ok"
+    test -n "${OS_WLAN}" -a -n "${ssid}" && start_wlan 0 && wlan_ok="ok" && dhclient_reduce_request
+    test -n "${OS_WLAN1}" -a -n "${ssid1}" && start_wlan 1 && wlan_ok="ok" && dhclient_reduce_request
+    test -n "${OS_PPP}" -a -r /data/etc/ppp/modem && ifconfig | grep ${OS_PPP} &>/dev/null && ppp_ok="ok" && dhclient_reduce_request
     def_route_ok=$(ip route get 1.1.1.1 &>/dev/null && echo "ok")
     
     if [[ -n "${OS_ETH}" ]]; then
@@ -202,7 +201,7 @@ start() {
         if [[ "${wlan_ok}" == "ok" ]] || [[ "${ppp_ok}" == "ok" ]] && [[ "${def_route_ok}" == "ok" ]]; then
             start_eth &>/dev/null &
         else
-            start_eth && eth_ok="ok"
+            start_eth && eth_ok="ok" && dhclient_reduce_request
         fi
     fi
 
@@ -254,7 +253,7 @@ start() {
     fi
 }
 
-stop() {
+function stop() {
     msg_begin "Stopping network"
     if [[ -r ${INTERFACES_CONF} ]]; then
         ifdown -i ${INTERFACES_CONF} -a 2>&1 | logger -t network
@@ -284,4 +283,3 @@ case "$1" in
 esac
 
 exit $?
-

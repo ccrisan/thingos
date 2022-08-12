@@ -1,6 +1,9 @@
 #!/bin/bash
 
 make_resolv_conf() {
+    # ignore DNS if explicitly not requested in conf file
+    grep -q request /var/cache/dhclient.conf.${interface} &>/dev/null && return
+
     resolv_conf=/etc/resolv.conf
     echo -n > $resolv_conf
     # DHCPv4
@@ -162,6 +165,9 @@ case "$reason" in
             fi
 
             for router in $new_routers; do
+                # ignore routes if explicitly not requested in conf file
+                grep -q request /var/cache/dhclient.conf.${interface} &>/dev/null && continue
+            
                 if [ "$new_subnet_mask" = "255.255.255.255" ]; then
                     # point-to-point connection => set explicit route
                     ip -4 route add ${router} dev $interface >/dev/null 2>&1
