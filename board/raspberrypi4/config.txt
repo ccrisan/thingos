@@ -1,4 +1,4 @@
-zImage
+kernel=zImage
 gpu_mem=32
 dtparam=i2c_arm=on
 dtparam=i2s=on
