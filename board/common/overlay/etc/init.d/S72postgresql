@@ -44,11 +44,13 @@ function start() {
     cd ${DB_DIR}
     
     # Initialize data dir if not present
+    fresh=
     if ! [[ -f ${DB_DIR}/PG_VERSION ]]; then
         msg_begin "Initializing postgresql data directory"
         run_pg_ctl initdb -s -D ${DB_DIR} -o \'-E UTF-8 --no-locale\' &>> ${LOG}
         test $? == 0 && msg_done || msg_fail
         echo "include_if_exists = '${CONF}'" >> ${DB_DIR}/postgresql.conf
+        fresh=true
     fi
 
     # Start server
@@ -57,7 +59,7 @@ function start() {
     test $? == 0 && msg_done || msg_fail
 
     # Restore from dump if present
-    if [[ -f ${DUMP_FILE} ]]; then
+    if [[ -f ${DUMP_FILE} ]] && [[ -n "${fresh}" ]]; then
         msg_begin "Restoring postgresql data from dump"
         if gzip -t ${DUMP_FILE} &>/dev/null; then
             # Remove any existing old DB backup directory to make space
