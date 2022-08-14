@@ -1,8 +1,14 @@
 #!/bin/bash
 
-FIRMWARE_FILE="/lib/firmware/BCM4345C5.hcd"
 BRCM_PATCHRAM="/usr/libexec/brcm_patchram_plus1"
 UART_DEV="/dev/ttyS1"
+SARADC_IN1=$(cat /sys/bus/iio/devices/iio:device0/in_voltage1_raw)
+
+if [[ "${SARADC_IN1}" -ge 634 ]] && [[ "${SARADC_IN1}" -le 746 ]]; then
+    FIRMWARE_FILE="/lib/firmware/brcm/BCM4345C0.hcd"
+else
+    FIRMWARE_FILE="/lib/firmware/brcm/BCM4345C5.hcd"
+fi
 
 function btuart_start() {
     # Reset Bluetooth via GPIO
