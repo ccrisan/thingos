@@ -1,4 +1,4 @@
 kernel=Image
 fdt=rk3566-radxa-cm3-rpi-cm4-io.dtb
 cmdline=rootwait ro rootflags=noload panic=10 quiet loglevel=1
-overlays=rk3568-uart0 rk3568-uart2-m0 rk3568-disable-npu
+overlays=rk3568-uart0 rk3568-disable-npu
