@@ -512,6 +512,7 @@ F:	package/batman-adv/
 F:	package/containerd/
 F:	package/delve/
 F:	package/docker-cli/
+F:	package/docker-compose/
 F:	package/docker-engine/
 F:	package/docker-proxy/
 F:	package/fuse-overlayfs/
