@@ -78,6 +78,8 @@ function start_wlan() {
     index=$1
     test "${index}" == 0 && index=
     iface_var=OS_WLAN${index}
+    iface_upper=$(tr a-z A-Z <<< ${!iface_var})
+    static_ip_var=STATIC_IP_${iface_upper}
 
     msg_begin "Configuring wireless network on ${!iface_var}"
     if ! ifconfig ${!iface_var} &>/dev/null; then
@@ -98,6 +100,9 @@ function start_wlan() {
             msg_done ${STATIC_IP}
             ifconfig ${!iface_var} ${STATIC_IP} up
             STATIC_IP="" # won't be used again
+        elif [[ -n "${!static_ip_var}" ]]; then
+            msg_done ${!static_ip_var}
+            ifconfig ${!iface_var} ${!static_ip_var} up
         else
             msg_done dhcp
             cp ${DH_CONF} ${DH_CONF}.${!iface_var}
@@ -112,6 +117,9 @@ function start_wlan() {
 
 function start_eth() {
     msg_begin "Configuring wired network"
+    
+    iface_upper=$(tr a-z A-Z <<< ${OS_ETH})
+    static_ip_var=STATIC_IP_${iface_upper}
 
     # wait for driver
     w=3
@@ -160,6 +168,9 @@ function start_eth() {
             msg_done ${STATIC_IP}
             ifconfig ${OS_ETH} ${STATIC_IP} up
             STATIC_IP="" # won't be used again
+        elif [[ -n "${!static_ip_var}" ]]; then
+            msg_done ${!static_ip_var}
+            ifconfig ${OS_ETH} ${!static_ip_var} up
         else
             msg_done dhcp
             cp ${DH_CONF} ${DH_CONF}.${OS_ETH}
