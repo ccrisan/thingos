@@ -6,15 +6,43 @@ CONF="/etc/netwatch.conf"
 test -s ${CONF} || exit 0
 source ${CONF}
 
-test -n "${NET_WATCH_HOST}" || exit 0
-test -n "${NET_WATCH_PORT}" || exit 0
-
 test -n "${OS_VERSION}" || source /etc/init.d/base
 
 test "${OS_NETWORKLESS}" == "true" && exit 0
 
 
-watch() {
+function gw_ok() {
+    def_route=$(ip route | grep default | head -n 1)
+    test -n "${def_route}" || return 1  # no default route
+    
+    grep -q via <<< ${def_route} || return 0  # default route w/o via
+    
+    gw=$(cut -d ' ' -f 3 <<< ${def_route})
+    test -n "${gw}" || return 1  # no gateway
+    
+    ping -c 2 -W 2 -w 3 ${gw} &>/dev/null
+}
+
+function gw_watch() {
+    count=0
+    GW_WATCH_RETRIES=$((${GW_WATCH_RETRIES} - 1))
+    while true; do
+        sleep ${GW_WATCH_INTERVAL}
+        if gw_ok 2>&1; then
+            count=0
+        else
+            if [[ ${count} -lt ${GW_WATCH_RETRIES} ]]; then
+                logger -t netwatch "gateway not reachable"
+                count=$((${count} + 1))
+                continue
+            else
+                panic_action netwatch "gateway not reachable"
+            fi
+        fi
+    done
+}
+
+function net_watch() {
     sleep ${NET_WATCH_DELAY}
 
     count=0
@@ -35,15 +63,20 @@ watch() {
     done
 }
 
-start() {
+function start() {
     msg_begin "Starting netwatch"
-    watch &
+    if [[ -n "${NET_WATCH_HOST}" ]] && [[ -n "${NET_WATCH_PORT}" ]]; then
+        net_watch &
+    fi
+    if [[ "${GW_WATCH}" == true ]]; then
+        gw_watch &
+    fi
     msg_done
 }
 
-stop() {
+function stop() {
     msg_begin "Stopping netwatch"
-    ps | grep netwatch | grep -v $$ | grep -v grep | tr -s ' ' | sed -e 's/^\s//' | cut -d ' ' -f 1 | xargs -r kill
+    ps | grep $(basename $0) | grep -v $$ | grep -v grep | tr -s ' ' | sed -e 's/^\s//' | cut -d ' ' -f 1 | xargs -r kill
     msg_done
 }
 
