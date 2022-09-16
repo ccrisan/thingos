@@ -195,6 +195,9 @@ function dhclient_reduce_request() {
 function start() {
     hostname=$(hostname)
     echo "send host-name = \"${hostname}\";" > ${DH_CONF}
+    
+    # If we've got static settings for gateway and DNS server, ignore corresponding DHCP settings
+    test -n "${STATIC_GW}" && test -n "${STATIC_DNS}" && dhclient_reduce_request
 
     start_lo
 
@@ -240,7 +243,7 @@ function start() {
     else
         if [[ -n "${STATIC_GW}" ]]; then
             msg_begin "Setting static gateway to ${STATIC_GW}"
-            ip route add default via ${STATIC_GW}
+            ip route add default via ${STATIC_GW} &>/dev/null || ip route change default via ${STATIC_GW} &>/dev/null
             test $? == 0 && msg_done || msg_fail
         fi
 
