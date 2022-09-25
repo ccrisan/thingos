@@ -4,11 +4,7 @@
 #
 ################################################################################
 
-<<<<<<< HEAD
-RUST_VERSION = 1.58.1
-=======
-RUST_VERSION = 1.62.0
->>>>>>> 6ea42ff9cf (package/{rust, rust-bin}: bump to version 1.62.0)
+RUST_VERSION = 1.64.0
 RUST_SOURCE = rustc-$(RUST_VERSION)-src.tar.xz
 RUST_SITE = https://static.rust-lang.org/dist
 RUST_LICENSE = Apache-2.0 or MIT
@@ -18,17 +14,11 @@ HOST_RUST_PROVIDES = host-rustc
 
 HOST_RUST_DEPENDENCIES = \
 	toolchain \
+	host-pkgconf \
+	host-python3 \
 	host-rust-bin \
 	host-openssl \
 	$(BR2_CMAKE_HOST_DEPENDENCY)
-
-ifeq ($(BR2_PACKAGE_PYTHON3),y)
-HOST_RUST_PYTHON_VERSION = $(PYTHON3_VERSION_MAJOR)
-HOST_RUST_DEPENDENCIES += host-python3
-else
-HOST_RUST_PYTHON_VERSION = $(PYTHON_VERSION_MAJOR)
-HOST_RUST_DEPENDENCIES += host-python
-endif
 
 HOST_RUST_VERBOSITY = $(if $(VERBOSE),2,0)
 
@@ -54,7 +44,7 @@ define HOST_RUST_CONFIGURE_CMDS
 		echo 'target = ["$(RUSTC_TARGET_NAME)"]'; \
 		echo 'cargo = "$(HOST_RUST_BIN_DIR)/cargo/bin/cargo"'; \
 		echo 'rustc = "$(HOST_RUST_BIN_DIR)/rustc/bin/rustc"'; \
-		echo 'python = "$(HOST_DIR)/bin/python$(HOST_RUST_PYTHON_VERSION)"'; \
+		echo 'python = "$(HOST_DIR)/bin/python$(PYTHON3_VERSION_MAJOR)"'; \
 		echo 'submodules = false'; \
 		echo 'vendor = true'; \
 		echo 'extended = true'; \
@@ -67,6 +57,7 @@ define HOST_RUST_CONFIGURE_CMDS
 		echo 'sysconfdir = "$(HOST_DIR)/etc"'; \
 		echo '[rust]'; \
 		echo 'channel = "stable"'; \
+		echo 'musl-root = "$(STAGING_DIR)"' ; \
 		echo '[target.$(RUSTC_TARGET_NAME)]'; \
 		echo 'cc = "$(TARGET_CROSS)gcc"'; \
 		echo '[llvm]'; \
@@ -75,12 +66,29 @@ define HOST_RUST_CONFIGURE_CMDS
 endef
 
 define HOST_RUST_BUILD_CMDS
-	cd $(@D); $(HOST_MAKE_ENV) $(HOST_DIR)/bin/python$(HOST_RUST_PYTHON_VERSION) x.py build
+	cd $(@D); $(HOST_MAKE_ENV) $(HOST_DIR)/bin/python$(PYTHON3_VERSION_MAJOR) x.py build
 endef
 
+HOST_RUST_INSTALL_OPTS = \
+	--prefix=$(HOST_DIR) \
+	--disable-ldconfig
+
+define HOST_RUST_INSTALL_RUSTC
+	cd $(@D)/build/tmp/tarball/rust/$(RUSTC_HOST_NAME)/rust-$(RUST_VERSION)-$(RUSTC_HOST_NAME); \
+		./install.sh $(HOST_RUST_INSTALL_OPTS) --components=rustc,cargo,rust-std-$(RUSTC_HOST_NAME)
+endef
+
+ifeq ($(BR2_PACKAGE_HOST_RUSTC_TARGET_ARCH_SUPPORTS),y)
+define HOST_RUST_INSTALL_LIBSTD_TARGET
+	cd $(@D)/build/tmp/tarball/rust-std/$(RUSTC_TARGET_NAME)/rust-std-$(RUST_VERSION)-$(RUSTC_TARGET_NAME); \
+		./install.sh $(HOST_RUST_INSTALL_OPTS)
+endef
+endif
+
 define HOST_RUST_INSTALL_CMDS
-	cd $(@D); $(HOST_MAKE_ENV) $(HOST_DIR)/bin/python$(HOST_RUST_PYTHON_VERSION) x.py dist
-	cd $(@D); $(HOST_MAKE_ENV) $(HOST_DIR)/bin/python$(HOST_RUST_PYTHON_VERSION) x.py install
+	cd $(@D); $(HOST_MAKE_ENV) $(HOST_DIR)/bin/python$(PYTHON3_VERSION_MAJOR) x.py dist
+	$(HOST_RUST_INSTALL_RUSTC)
+	$(HOST_RUST_INSTALL_LIBSTD_TARGET)
 endef
 
 $(eval $(host-generic-package))
