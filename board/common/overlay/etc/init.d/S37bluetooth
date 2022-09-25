@@ -23,7 +23,7 @@ prepare_conf ${CONF} ${SYS_CONF} ${BOOT_CONF}
 test -s ${CONF} || exit 0
 
 
-configure() {
+function configure() {
     mkdir -p ${RUN_DATA_DIR}
     ln -sf ${RUN_DATA_DIR} ${DATA_DIR}
     cp ${CONF} ${RUN_CONF}
@@ -34,7 +34,25 @@ configure() {
     fi
 }
 
-start() {
+function watch_adapter() {
+    count=0
+    while true; do
+        sleep 60
+        output=$(timeout 1 bluetoothctl pairable on 2>/dev/null)
+        if [[ -n "${output}" ]] && [[ $? == 0 ]]; then
+            count=0
+        else
+            if [[ ${count} -lt 5 ]]; then
+                count=$((count + 1))
+                logger -t bluetooth "bluetooth adapter not responding"
+            else
+                panic_action bluetooth "bluetooth adapter not responding"
+            fi
+        fi
+    done
+}
+
+function start() {
     msg_begin "Configuring bluetooth"
 
     # adapter explicitly makred as unavailable from previous boot steps
@@ -84,12 +102,15 @@ start() {
         sleep 1
         ${PROG_CTL} discoverable on >/dev/null
     fi
+    
+    watch_adapter &
 }
 
-stop() {
+function stop() {
     msg_begin "Stopping bluetoothd"
     killall -q $(basename ${PROG})
-    test $? == 0 && msg_done || msg_fail
+    ps | grep $(basename $0) | grep -v $$ | grep -v grep | tr -s ' ' | sed -e 's/^\s//' | cut -d ' ' -f 1 | xargs -r kill
+    msg_done
 }
 
 case "$1" in
