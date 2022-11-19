@@ -7,6 +7,9 @@ test -n "${OS_DEBUG}" || source /etc/init.d/os_conf
 
 source /etc/init.d/panic
 
+msg() {
+    echo " * $1"
+}
 
 msg_begin() {
     echo -n " * $1: "
