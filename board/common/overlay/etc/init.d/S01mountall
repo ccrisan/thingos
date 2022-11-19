@@ -19,7 +19,15 @@ mount_overlay() {
     grep -oE 'lowerdir=[^,]+' /tmp/fstab.overlay | cut -d '=' -f 2 | xargs -r mkdir -p
     grep -oE 'upperdir=[^,]+' /tmp/fstab.overlay | cut -d '=' -f 2 | xargs -r mkdir -p
     grep -oE 'workdir=[^ ]+' /tmp/fstab.overlay | cut -d '=' -f 2 | xargs -r mkdir -p
-    /bin/mount -T /tmp/fstab.overlay -a
+    cat /tmp/fstab.overlay | grep -vE '^#' | while read line; do
+        parts=(${line})
+        test ${#parts[@]} -ge 4 || continue
+        fs=${parts[0]}
+        mp=${parts[1]}
+        type=${parts[2]}
+        opts=${parts[3]}
+        /bin/mount -t ${type} -o ${opts} ${fs} ${mp}
+    done
     test $? == 0 && msg_done || msg_fail
 }
 
