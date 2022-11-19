@@ -4,6 +4,8 @@ BOOT_LOG=/var/log/boot.log
 TMP_BOOT_LOG=/tmp/_boot.log
 PID_FILE=/tmp/rcS.pid
 
+/etc/init.d/mountsys
+
 set -a
 test -s /etc/environment && source /etc/environment
 test -s /data/etc/environment && source /data/etc/environment

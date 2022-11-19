@@ -22,3 +22,6 @@ pid=$(cat ${PID_FILE})
 while kill -0 ${pid} &>/dev/null; do
     sleep 1
 done
+
+/bin/umount -a -r
+/sbin/swapoff -a

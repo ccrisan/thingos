@@ -14,7 +14,6 @@
 # process   == program to run
 
 # Startup the system
-::sysinit:/etc/init.d/mountsys
 ::sysinit:/etc/init.d/rcS
 
 # Start a getty for local login
@@ -25,5 +24,3 @@ ttylogin::respawn:/sbin/getty -L ttylogin 115200 vt100
 
 # Stuff to do before rebooting
 ::shutdown:/etc/init.d/rcK
-::shutdown:/bin/umount -a -r
-::shutdown:/sbin/swapoff -a
