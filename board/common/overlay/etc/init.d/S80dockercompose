@@ -35,6 +35,7 @@ function start() {
     fi
 
     mkdir -p ${RUN_DIR}
+    export COMPOSE_HTTP_TIMEOUT=300
     ${PROG} -p ${PROJ} --project-directory ${RUN_DIR} -f ${CONF} up --no-start &>${LOG}
     ${PROG} -p ${PROJ} --project-directory ${RUN_DIR} -f ${CONF} up -d &>>${LOG}
     test $? == 0 && msg_done || msg_fail
@@ -42,7 +43,7 @@ function start() {
 
 function stop() {
     msg_begin "Stopping docker-compose"
-    ${PROG} -p ${PROJ} --project-directory ${RUN_DIR} -f ${CONF} down &>>${LOG}
+    ${PROG} -p ${PROJ} --project-directory ${RUN_DIR} -f ${CONF} stop &>>${LOG}
     test $? == 0 && msg_done || msg_fail
 }
 
