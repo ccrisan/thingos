@@ -1,0 +1,46 @@
+#!/bin/bash
+
+PROG=/usr/bin/dockerd
+LOG=/var/log/dockerd.log
+
+test -x ${PROG} || exit 0
+
+test -n "${OS_VERSION}" || source /etc/init.d/base
+
+
+function start() {
+    msg_begin "Starting docker engine"
+    mkdir -p /var/lib/docker
+    mkdir -p /var/run/docker
+    modprobe fuse &>/dev/null
+    ${PROG} -H unix:///var/run/docker.sock -G root > ${LOG} 2>&1 &
+    test $? == 0 && msg_done || msg_fail
+}
+
+function stop() {
+    msg_begin "Stopping docker engine"
+    killall -q $(basename ${PROG})
+    test $? == 0 && msg_done || msg_fail
+}
+
+case "$1" in
+    start)
+        start
+        ;;
+
+    stop)
+        stop
+        ;;
+    
+    restart)
+        stop
+        start
+        ;;
+
+    *)
+        echo "Usage: $0 {start|stop|restart}"
+        exit 1
+        ;;
+esac
+
+exit $?

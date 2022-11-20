@@ -1,0 +1,69 @@
+#!/bin/bash
+
+SYS_CONF=/etc/docker-compose.yml
+BOOT_CONF=/boot/docker-compose.yml
+CONF=/data/etc/docker-compose.yml
+
+PROG=/usr/bin/docker-compose
+LOG=/var/log/docker-compose.log
+
+PROJ=system
+RUN_DIR=/var/run/docker-compose
+
+test -x ${PROG} || exit 0
+test -n "${OS_VERSION}" || source /etc/init.d/base
+prepare_conf ${CONF} ${SYS_CONF} ${BOOT_CONF}
+test -s ${CONF} || exit 0
+
+
+function start() {
+    msg_begin "Starting docker-compose"
+    
+    # Wait for dockerd to start
+    running=false
+    for ((i=0; i < 30; i++)); do
+        if docker ps &>/dev/null; then
+            running=true
+            break
+        fi
+        sleep 1
+    done
+    
+    if [[ ${running} != true ]]; then
+        msg_fail "dockerd not running"
+        return
+    fi
+
+    mkdir -p ${RUN_DIR}
+    ${PROG} -p ${PROJ} --project-directory ${RUN_DIR} -f ${CONF} up --no-start &>${LOG}
+    ${PROG} -p ${PROJ} --project-directory ${RUN_DIR} -f ${CONF} up -d &>>${LOG}
+    test $? == 0 && msg_done || msg_fail
+}
+
+function stop() {
+    msg_begin "Stopping docker-compose"
+    ${PROG} -p ${PROJ} --project-directory ${RUN_DIR} -f ${CONF} down &>>${LOG}
+    test $? == 0 && msg_done || msg_fail
+}
+
+case "$1" in
+    start)
+        start
+        ;;
+
+    stop)
+        stop
+        ;;
+    
+    restart)
+        stop
+        start
+        ;;
+
+    *)
+        echo "Usage: $0 {start|stop|restart}"
+        exit 1
+        ;;
+esac
+
+exit $?
