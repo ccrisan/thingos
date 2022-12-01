@@ -80,6 +80,8 @@ case "$1" in
         cp -pur /usr/share/dataskel/* /data
         sync
         msg_done
+
+        touch /data/.install_factory_defaults
         ;;
 
     stop)

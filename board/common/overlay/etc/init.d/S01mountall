@@ -2,7 +2,7 @@
 
 test -n "${OS_VERSION}" || source /etc/init.d/base
 
-mount_fs() {
+function mount_fs() {
     msg_begin "Mounting filesystems"
     /bin/mount -T /tmp/fstab.disk -a &&
     /bin/mount -T /tmp/fstab.extra -a &&
@@ -11,7 +11,7 @@ mount_fs() {
     test $? == 0 && msg_done || msg_fail
 }
 
-mount_overlay() {
+function mount_overlay() {
     modprobe overlay &>/dev/null
     grep -qw overlay /proc/filesystems || return
 
@@ -31,7 +31,16 @@ mount_overlay() {
     test $? == 0 && msg_done || msg_fail
 }
 
-remount_rw() {
+function install_factory_defaults() {
+    if [[ -s /boot/factory-defaults.tar.xz ]]; then
+        msg_begin "Installing factory defaults"
+        tar --no-same-owner -mxf /boot/factory-defaults.tar.xz -C /data
+        sync
+        msg_done
+    fi
+}
+
+function remount_rw() {
     msg_begin "Remounting boot partition read-write"
     mount -o remount,rw /boot
     test $? == 0 && msg_done || msg_fail
@@ -41,7 +50,7 @@ remount_rw() {
     test $? == 0 && msg_done || msg_fail
 }
 
-mk_tty_login() {
+function mk_tty_login() {
     console=$(grep -oE 'console=[a-zA-Z0-9_/-]+' /proc/cmdline | cut -d = -f 2)
     if [[ -z "${console}" ]]; then console=/dev/console; fi
     if ! [[ ${console} == /* ]]; then console=/dev/${console}; fi
@@ -52,6 +61,10 @@ case "$1" in
     start)
         mount_fs
         mount_overlay
+        if [[ -f /data/.install_factory_defaults ]]; then
+            rm /data/.install_factory_defaults
+            install_factory_defaults
+        fi
 
         # we need to source conf again, now that /data is available
         source /etc/init.d/os_conf
