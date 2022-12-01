@@ -1,0 +1,74 @@
+#!/bin/bash
+
+test -n "${OS_VERSION}" || source /etc/init.d/base
+test -n "${OS_FACTORY_RESET_GPIO}" || exit 0
+
+OS_FACTORY_RESET_HOLD_SECONDS=${OS_FACTORY_RESET_HOLD_SECONDS:-10}
+OS_FACTORY_RESET_GPIO_LEVEL=${OS_FACTORY_RESET_GPIO_LEVEL:-1}
+
+
+function reset_factory_defaults() {
+    test -x /usr/libexec/before-factory-reset && test -x /usr/libexec/before-factory-reset
+    sync
+    source /tmp/disk_info
+    echo -e "d
+        3
+        w" | /sbin/fdisk ${DISK_DEV} &>/dev/null
+    sync
+    test -x /usr/libexec/after-factory-reset && test -x /usr/libexec/after-factory-reset
+    /sbin/reboot
+}
+
+function watch() {
+    count=0
+    while true; do
+        sleep 1
+        if [[ $(gpio.sh ${OS_FACTORY_RESET_GPIO}) == "${OS_FACTORY_RESET_GPIO_LEVEL}" ]]; then
+            count=$((count + 1))
+            logger -t factory-reset "button pressed (count=${count})"
+        else
+            if [[ ${count} -gt 0 ]]; then
+                logger -t factory-reset "button released"
+            fi
+            count=0
+        fi
+        if [[ ${count} -ge ${OS_FACTORY_RESET_HOLD_SECONDS} ]]; then
+            logger -t factory-reset "resetting to factory defaults"
+            reset_factory_defaults
+            break
+        fi
+    done
+}
+
+function start() {
+    msg_begin "Starting factory-reset listener"
+    watch &
+    msg_done
+}
+
+function stop() {
+    msg_begin "Stopping factory-reset listener"
+    ps | grep $(basename $0) | grep -v $$ | grep -v grep | tr -s ' ' | sed -e 's/^\s//' | cut -d ' ' -f 1 | xargs -r kill
+    msg_done
+}
+
+case "$1" in
+    start)
+        start
+        ;;
+        
+    stop)
+        stop
+        ;;
+        
+    restart)
+        stop
+        start
+        ;;
+    
+    *)
+        echo "Usage: $0 {start|stop|restart}"
+        exit 1
+esac
+
+exit 0

@@ -491,6 +491,11 @@ function do_flash_boot() {
     mount -T /tmp/fstab.disk -o rw /boot
     boot_mounted_rw=true
 
+    # the /boot/factory-defaults.tar.xz file is always preserved across updates
+    if [[ -s ${FW_DIR}/old_boot/factory-defaults.tar.xz ]]; then
+        cp ${FW_DIR}/old_boot/factory-defaults.tar.xz /boot
+    fi
+
     # the /usr/libexec/fw-restore-boot-cfg script, if present, takes the old (backup) boot dir as argument
     # and should restore any /boot configuration that needs to be preserved across updates
     # from the old boot dir to the current (new) /boot dir
