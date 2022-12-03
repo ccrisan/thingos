@@ -1,29 +1,55 @@
 #!/bin/bash
 
 test -n "${OS_VERSION}" || source /etc/init.d/base
-test -n "${OS_FACTORY_RESET_GPIO}" || exit 0
+test -n "${OS_FACTORY_RESET_GPIO}" || test -n "${OS_FACTORY_RESET_INPUT}" || exit 0
 
 OS_FACTORY_RESET_HOLD_SECONDS=${OS_FACTORY_RESET_HOLD_SECONDS:-10}
-OS_FACTORY_RESET_GPIO_LEVEL=${OS_FACTORY_RESET_GPIO_LEVEL:-1}
+OS_FACTORY_RESET_LEVEL=${OS_FACTORY_RESET_LEVEL:-1}
+
+INPUT_VALUE_FILE=/tmp/.reset_button_input
 
 
 function reset_factory_defaults() {
-    test -x /usr/libexec/before-factory-reset && test -x /usr/libexec/before-factory-reset
+    test -x /usr/libexec/before-factory-reset && /usr/libexec/before-factory-reset
     sync
     source /tmp/disk_info
     echo -e "d
         3
         w" | /sbin/fdisk ${DISK_DEV} &>/dev/null
     sync
-    test -x /usr/libexec/after-factory-reset && test -x /usr/libexec/after-factory-reset
+    test -x /usr/libexec/after-factory-reset && /usr/libexec/after-factory-reset
     /sbin/reboot
+}
+
+function get_button_value() {
+    if [[ -n "${OS_FACTORY_RESET_GPIO}" ]]; then
+        gpio.sh ${OS_FACTORY_RESET_GPIO}
+    elif [[ -s "${INPUT_VALUE_FILE}" ]]; then
+        cat ${INPUT_VALUE_FILE}
+    else
+        expr ${OS_FACTORY_RESET_LEVEL} - 1
+    fi
+}
+
+function read_input() {
+    value=$(od -N 32 -v -t x2 /dev/input/${OS_FACTORY_RESET_INPUT} | grep -E "^0000000 " | cut -d ' ' -f 8)
+    printf "%d" "${value:-0}"
+}
+
+function watch_input() {
+    expr ${OS_FACTORY_RESET_LEVEL} - 1 > ${INPUT_VALUE_FILE}
+    while true; do
+        value=$(read_input)
+        echo ${value} > ${INPUT_VALUE_FILE}
+        usleep 100000
+    done
 }
 
 function watch() {
     count=0
     while true; do
         sleep 1
-        if [[ $(gpio.sh ${OS_FACTORY_RESET_GPIO}) == "${OS_FACTORY_RESET_GPIO_LEVEL}" ]]; then
+        if [[ $(get_button_value) == ${OS_FACTORY_RESET_LEVEL} ]]; then
             count=$((count + 1))
             logger -t factory-reset "button pressed (count=${count})"
         else
@@ -43,6 +69,7 @@ function watch() {
 function start() {
     msg_begin "Starting factory-reset listener"
     watch &
+    test -n "${OS_FACTORY_RESET_INPUT}" && watch_input &
     msg_done
 }
 

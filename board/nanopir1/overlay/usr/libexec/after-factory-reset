@@ -1,0 +1,5 @@
+#!/bin/bash
+
+for led in /sys/class/leds/{LED2,LED3,status_led}/; do
+    echo 0 > ${led}/brightness
+done
