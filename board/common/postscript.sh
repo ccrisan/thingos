@@ -32,14 +32,6 @@ ln -s /tmp ${TARGET}/run
 mkdir -p ${TARGET}/var/lib
 mkdir -p ${TARGET}/var/log
 
-# board-specific os.conf
-if [ -r ${BOARD_DIR}/os.conf ]; then
-    for line in $(cat ${BOARD_DIR}/os.conf); do
-        key=$(echo ${line} | cut -d '=' -f 1)
-        sed -i -r "s/${key}=.*/${line}/" /${TARGET}/etc/os.conf
-    done
-fi
-
 # add admin user alias
 if ! grep -qE '^admin:' ${TARGET}/etc/passwd; then
     echo "admin:x:0:0:root:/root:/bin/sh" >> ${TARGET}/etc/passwd
