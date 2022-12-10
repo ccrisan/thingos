@@ -1,17 +1,25 @@
 #!/bin/bash
 
 
-#### usage ####
+#### Usage ####
 
 function exit_usage() {
-    echo "Usage: fwupdate versions [-j]                     (lists available versions, optionally outputting json)"
-    echo "       fwupdate current                           (shows the current version)"
-    echo "       fwupdate download <version|url|file>       (downloads a firmware OS image)"
-    echo "       fwupdate extract                           (extracts the downloaded firmware archive)"
-    echo "       fwupdate flashboot                         (flashes the boot partition from extracted image)"
-    echo "       fwupdate flashreboot                       (prepares for reboot + root partition flash)"
-    echo "       fwupdate status                            (shows the current firmware updating status; see below)"
-    echo "       fwupdate upgrade <version|url|file>        (performs all the operations necessary for upgrading)"
+    echo "       fwupdate current"
+    echo "           shows the current version"
+    echo "       fwupdate latest"
+    echo "           shows the latest available version with details"
+    echo "       fwupdate download <version|latest|url|file>"
+    echo "           downloads a specific firmware OS image"
+    echo "       fwupdate extract"
+    echo "           extracts the downloaded firmware archive"
+    echo "       fwupdate flashboot"
+    echo "           flashes the boot partition from extracted image"
+    echo "       fwupdate flashreboot"
+    echo "           prepares for reboot + root partition flashing"
+    echo "       fwupdate status"
+    echo "           shows the current firmware installing process status; see below"
+    echo "       fwupdate install <version|latest|url|file>"
+    echo "           performs all the operations necessary for installing a certain firmware version"
     echo ""
     echo "Statuses:"
     echo "       idle"
@@ -32,14 +40,12 @@ if [[ -z "$1" ]]; then
 fi
 
 
-#### configuration ####
+#### Configuration ####
 
 set -a
 set -e
 
-SYS_VERSION_FILE=/etc/version
-SYS_BOARD_FILE=/etc/board
-OS_CONF_FILE=/etc/init.d/os_conf
+LATEST_VERSION_CMD=/usr/libexec/os-latest-version
 
 MIN_FREE_DISK=500  # MB
 DISK_CLEANUP_SCRIPT=/usr/libexec/disk-cleanup
@@ -84,11 +90,25 @@ ROOT_LOOP="/dev/loop4"
 
 boot_mounted_rw=false
 
-source ${OS_CONF_FILE}
-source ${SYS_VERSION_FILE}
+source /etc/init.d/base
 
 
-#### cleanup on exit ####
+#### Utils ####
+
+function expand_placeholders() {
+    # $1 - template with placeholders
+    # $2 - optional version
+    echo "$1" 1>&2
+
+    echo "$1" | \
+        sed "s,\${platform},${BOARD_NAME},g" | \
+        sed "s,\${os_prefix},${OS_PREFIX},g" | \
+        sed "s,\${os_short_name},${OS_SHORT_NAME},g" | \
+        sed "s,\${version},$2,g"
+}
+
+
+#### Cleanup on exit ####
 
 function cleanup_on_exit() {
     set +e
@@ -115,7 +135,7 @@ function cleanup_on_exit() {
 }
 
 
-#### disk & partition devices ####
+#### Disk & partition devices ####
 
 source /tmp/disk_info
 
@@ -198,49 +218,59 @@ END
 }
 
 
-#### versions ####
-
-function show_versions() {
-    board=$(cat ${SYS_BOARD_FILE})
-    show_json=$1
-
-    # the /usr/libexec/list-versions-* helpers return a table with the following format:
-    #     <version>|<prerelease>|<board>|<url>|<date|published>
-    versions=$(FW_USERNAME=${OS_FIRMWARE_USERNAME} FW_PASSWORD=${OS_FIRMWARE_PASSWORD} \
-               /usr/libexec/list-versions-${OS_FIRMWARE_METHOD} ${OS_FIRMWARE_REPO})
-
-    for version in ${versions[@]}; do
-        OIFS=${IFS}
-        IFS="|"
-        varr=(${version})
-        IFS=${OIFS}
-        if [[ "${OS_PRERELEASES}" == "false" && "${varr[1]}" == "true" ]]; then
-            continue  # skip prereleases
-        fi
-        if [[ "${varr[5]}" == "false" ]]; then
-            continue  # skip unpublished
-        fi
-        if [[ "${board}" != "${varr[2]}" ]]; then
-            continue  # skip other boards
-        fi
-
-        if [[ "${show_json}" == "true" ]]; then
-            echo "{\"version\": \"${varr[0]}\"," \
-                  "\"url\": \"${varr[3]}\"," \
-                  "\"prerelease\": ${varr[1]:-false}," \
-                  "\"date\": \"${varr[4]}\"}"
-        else
-            echo ${varr[0]}
-        fi
-    done
-}
+#### Current version ####
 
 function show_current() {
     echo ${OS_VERSION}
 }
 
 
-#### download ####
+#### Latest version ####
+
+function show_latest() {
+    if [[ ${OS_PRERELEASES} == true ]]; then
+        os_firmware_latest=${OS_FIRMWARE_LATEST_BETA}
+    else
+        os_firmware_latest=${OS_FIRMWARE_LATEST_STABLE}
+    fi
+
+    if [[ -n "${os_firmware_latest}" ]]; then
+        latest=$(curl --fail -sSL ${os_firmware_latest})
+        latest=$(jq -r '.url,.path,.version,.date' <<< "${latest}")
+        latest=(${latest})
+        url=${latest[0]}
+        path=${latest[1]}
+        version=${latest[2]}
+        date=${latest[3]}
+        if [[ "${url}" == null ]]; then
+            url="$(cut -d / -f 1,2,3 <<< ${os_firmware_latest})${path}"
+        fi
+        url=$(expand_placeholders ${url})
+    else
+        # Command specified by ${LATEST_VERSION_CMD} returns two lines:
+        # * the first one is the stable version
+        # * the second one being the "beta" version
+        # Each line contains three space-separated fields, representing:
+        #  * the version name
+        #  * download URL
+        #  * release date
+        IFS=$'\n' version_lines=($(${LATEST_VERSION_CMD})); unset IFS
+        if [[ ${OS_PRERELEASES} == true ]]; then
+            version_line=(${version_lines[1]:-${version_lines[0]}})
+        else
+            version_line=(${version_lines[0]})
+        fi
+
+        version=${version_line[0]}
+        url=${version_line[1]}
+        date=${version_line[2]}
+    fi
+
+    echo "${version}  ${url}  ${date}"
+}
+
+
+#### Download ####
 
 function do_download() {
     rm -rf ${FW_DIR}/*
@@ -278,22 +308,21 @@ function do_download() {
         fi
     fi
 
-    board=$(cat ${SYS_BOARD_FILE})
-    url=$1
-    version=$1
-
-    if ! [[ "${url}" == http* ]]; then  # a version was given
-        url=$(show_versions true | jq -r ". | select(.version==\"${version}\") | .url")
-    else
+    if [[ "$1" == latest ]]; then
+        latest=($(show_latest | tr -s ' '))
+        version=${latest[0]}
+        url=${latest[1]}
+    elif [[ "$1" == http* ]]; then  # a URL
         version="custom"
-    fi
-
-    if [[ -z "${url}" ]]; then
-        echo "no such version" | tee 1>&2 ${ERROR_FILE}
-        rm ${DOWNLOAD_STARTED_FILE}
+        url=$1
+    elif [[ -n "${OS_FIRMWARE_URL}" ]]; then
+        version=$1
+        url=$(expand_placeholders ${OS_FIRMWARE_URL} ${version})
+    else
+        echo "Variable OS_FIRMWARE_URL is not defined"
         exit 1
     fi
-
+    
     free_disk=$(df /data | tail -n 1 | tr -s ' ' | cut -d ' ' -f 4)
     if [[ "${free_disk}" -lt $((MIN_FREE_DISK * 1024)) ]]; then
         echo "not enough disk space" | tee 1>&2 ${ERROR_FILE}
@@ -315,9 +344,6 @@ function do_download() {
     echo ${version} > ${VER_FILE}
 
     curl_opts="-S -f -L"
-    if [[ -n "${OS_FIRMWARE_USERNAME}" ]]; then
-        curl_opts+=" --user ${OS_FIRMWARE_USERNAME}:${OS_FIRMWARE_PASSWORD}"
-    fi
 
     curl ${curl_opts} -o ${outfile} "${url}" &> ${CURL_LOG_FILE} &
     pid=$!
@@ -337,7 +363,7 @@ function do_download() {
 }
 
 
-#### extract ####
+#### Extract ####
 
 function run_pre_upgrade() {
     which losetup &>/dev/null || return 0
@@ -363,7 +389,7 @@ function run_pre_upgrade() {
         for script in ${pre_upgrade}/*.sh; do
             echo "running pre-upgrade script $(basename ${script})"
             if [[ -x ${script} ]] && ! ${script}; then
-                # non-zero exit status of pre-upgrade script indicates that
+                # Non-zero exit status of pre-upgrade script indicates that
                 # the upgrade process must not be continued
 
                 echo "aborted by pre-upgrade script" | tee 1>&2 ${ERROR_FILE}
@@ -449,7 +475,7 @@ function do_extract() {
 }
 
 
-#### flash boot ####
+#### Flash boot ####
 
 function do_flash_boot() {
     if ! [[ -f ${FW_FILE_EXTR} ]] || ! [[ -f ${EXTRACT_DONE_FILE} ]]; then
@@ -466,13 +492,12 @@ function do_flash_boot() {
 
     trap cleanup_on_exit EXIT
 
-    board=$(cat ${SYS_BOARD_FILE})
     boot_info=($(cat ${BOOT_INFO_FILE}))
 
     cp -r /boot ${FW_DIR}/old_boot
     umount /boot
     
-    # prevent unwanted reboots during upgrade
+    # Prevent unwanted reboots during firmware install
     panic_inhibit
     mount -o remount,rw /
     mv /sbin/reboot /sbin/reboot.bak
@@ -491,12 +516,12 @@ function do_flash_boot() {
     mount -T /tmp/fstab.disk -o rw /boot
     boot_mounted_rw=true
 
-    # the /boot/factory-defaults.tar.xz file is always preserved across updates
+    # The /boot/factory-defaults.tar.xz file is always preserved across updates
     if [[ -s ${FW_DIR}/old_boot/factory-defaults.tar.xz ]]; then
         cp ${FW_DIR}/old_boot/factory-defaults.tar.xz /boot
     fi
 
-    # the /usr/libexec/fw-restore-boot-cfg script, if present, takes the old (backup) boot dir as argument
+    # The /usr/libexec/fw-restore-boot-cfg script, if present, takes the old (backup) boot dir as argument
     # and should restore any /boot configuration that needs to be preserved across updates
     # from the old boot dir to the current (new) /boot dir
     if [[ -x /usr/libexec/fw-restore-boot-cfg ]]; then
@@ -507,7 +532,7 @@ function do_flash_boot() {
 }
 
 
-#### flash reboot ####
+#### Flash reboot ####
 
 function do_flash_reboot() {
     if ! [[ -f ${ROOT_INFO_FILE} ]] || ! [[ -f ${FLASH_BOOT_DONE_FILE} ]]; then
@@ -524,7 +549,6 @@ function do_flash_reboot() {
 
     reallocate_root_part
 
-    board=$(cat ${SYS_BOARD_FILE})
     root_info=($(cat ${ROOT_INFO_FILE}))
 
     mkdir -p ${TMP_ROOT_DIR}
@@ -550,14 +574,14 @@ function do_flash_reboot() {
 
     echo "rebooting..."
     test -x /sbin/reboot.bak && /sbin/reboot.bak || /sbin/reboot &
-    # guard forced reboot after 3 minutes
+    # Guard forced reboot after 3 minutes
     sleep 180 && echo b > /proc/sysrq-trigger
 
     exit 0
 }
 
 
-#### status ####
+#### Status ####
 
 function show_status() {
     if [[ -f ${VER_FILE} ]]; then
@@ -587,10 +611,10 @@ function show_status() {
 }
 
 
-#### upgrade ####
+#### Install ####
 
-function do_upgrade() {
-    echo "upgrading to $1"
+function do_install() {
+    echo "installing $1"
 
     do_download "$1"
     show_status
@@ -605,17 +629,15 @@ function do_upgrade() {
 }
 
 
-#### main ####
+#### Main ####
 
 case "$1" in
-    versions)
-        show_json="false"
-        test "$2" == "-j" && show_json="true"
-        show_versions ${show_json}
-        ;;
-
     current)
         show_current
+        ;;
+
+    latest)
+        show_latest
         ;;
 
     download)
@@ -645,16 +667,15 @@ case "$1" in
         show_status
         ;;
 
-    upgrade)
+    install)
         if [[ -z "$2" ]]; then
             exit_usage
         fi
 
-        do_upgrade "$2"
+        do_install "$2"
         ;;
 
     *)
         exit_usage
         ;;
 esac
-
