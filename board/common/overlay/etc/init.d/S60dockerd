@@ -12,6 +12,7 @@ function start() {
     msg_begin "Starting docker engine"
     mkdir -p /var/lib/docker
     mkdir -p /var/run/docker
+    test -f /var/lib/docker/daemon.json || echo '{}' > /var/lib/docker/daemon.json
     modprobe fuse &>/dev/null
     ${PROG} -H unix:///var/run/docker.sock -G root > ${LOG} 2>&1 &
     test $? == 0 && msg_done || msg_fail
