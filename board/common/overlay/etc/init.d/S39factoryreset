@@ -39,9 +39,11 @@ function read_input() {
 function watch_input() {
     expr ${OS_FACTORY_RESET_LEVEL} - 1 > ${INPUT_VALUE_FILE}
     while true; do
-        value=$(read_input)
-        echo ${value} > ${INPUT_VALUE_FILE}
-        usleep 100000
+        if value=$(read_input); then
+            echo ${value} > ${INPUT_VALUE_FILE}
+        else
+            sleep 1
+        fi
     done
 }
 
