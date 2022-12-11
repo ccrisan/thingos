@@ -109,7 +109,7 @@ function start() {
 function stop() {
     msg_begin "Stopping bluetoothd"
     killall -q $(basename ${PROG})
-    ps | grep $(basename $0) | grep -v $$ | grep -v grep | tr -s ' ' | sed -e 's/^\s//' | cut -d ' ' -f 1 | xargs -r kill
+    ps | grep bluetooth | grep -v $$ | grep -v grep | tr -s ' ' | sed -e 's/^\s//' | cut -d ' ' -f 1 | xargs -r kill
     msg_done
 }
 
