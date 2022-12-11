@@ -98,8 +98,6 @@ source /etc/init.d/base
 function expand_placeholders() {
     # $1 - template with placeholders
     # $2 - optional version
-    echo "$1" 1>&2
-
     echo "$1" | \
         sed "s,\${platform},${BOARD_NAME},g" | \
         sed "s,\${os_prefix},${OS_PREFIX},g" | \
@@ -154,7 +152,7 @@ function reallocate_boot_part() {
         return  # all good
     fi
 
-    echo "reallocating boot partition..."
+    echo "reallocating boot partition"
 
     # check overlapping with root partition
     if [[ ${boot_info[1]} -ge ${current_root_info[1]} ]]; then
@@ -193,7 +191,7 @@ function reallocate_root_part() {
         return  # all good
     fi
 
-    echo "reallocating root partition..."
+    echo "reallocating root partition"
 
     # check overlapping with data partition
     if [[ ${root_info[1]} -ge ${current_data_info[1]} ]]; then
@@ -235,6 +233,7 @@ function show_latest() {
     fi
 
     if [[ -n "${os_firmware_latest}" ]]; then
+        os_firmware_latest=$(expand_placeholders ${os_firmware_latest})
         latest=$(curl --fail -sSL ${os_firmware_latest})
         latest=$(jq -r '.url,.path,.version,.date' <<< "${latest}")
         latest=(${latest})
@@ -285,8 +284,6 @@ function do_download() {
     rm -f ${ERROR_FILE}
     touch ${DOWNLOAD_STARTED_FILE}
 
-    echo "downloading..."
-    
     trap cleanup_on_exit EXIT
 
     # Look for local file first
@@ -322,6 +319,8 @@ function do_download() {
         echo "Variable OS_FIRMWARE_URL is not defined"
         exit 1
     fi
+
+    echo "downloading ${version} from ${url}"
     
     free_disk=$(df /data | tail -n 1 | tr -s ' ' | cut -d ' ' -f 4)
     if [[ "${free_disk}" -lt $((MIN_FREE_DISK * 1024)) ]]; then
@@ -344,7 +343,6 @@ function do_download() {
     echo ${version} > ${VER_FILE}
 
     curl_opts="-S -f -L"
-
     curl ${curl_opts} -o ${outfile} "${url}" &> ${CURL_LOG_FILE} &
     pid=$!
     echo ${pid} > ${CURL_PID_FILE}
@@ -418,7 +416,7 @@ function do_extract() {
     rm -f ${FW_FILE_EXTR}
     touch ${EXTRACT_STARTED_FILE}
 
-    echo "extracting..."
+    echo "extracting"
 
     trap cleanup_on_exit EXIT
 
@@ -488,7 +486,7 @@ function do_flash_boot() {
     rm -f ${ERROR_FILE}
     touch ${FLASH_BOOT_STARTED_FILE}
 
-    echo "flashing boot..."
+    echo "flashing boot"
 
     trap cleanup_on_exit EXIT
 
@@ -543,7 +541,7 @@ function do_flash_reboot() {
     rm -f ${ERROR_FILE}
     touch ${FLASH_REBOOT_STARTED_FILE}
 
-    echo "preparing for reboot..."
+    echo "preparing for reboot"
 
     trap cleanup_on_exit EXIT
 
@@ -572,7 +570,7 @@ function do_flash_reboot() {
     umount ${TMP_ROOT_DIR}
     losetup -d ${ROOT_LOOP}
 
-    echo "rebooting..."
+    echo "rebooting"
     test -x /sbin/reboot.bak && /sbin/reboot.bak || /sbin/reboot &
     # Guard forced reboot after 3 minutes
     sleep 180 && echo b > /proc/sysrq-trigger
@@ -604,7 +602,7 @@ function show_status() {
     elif [[ -f ${DOWNLOAD_DONE_FILE} ]]; then
         echo "downloaded [${new_version}]"
     elif [[ -f ${DOWNLOAD_STARTED_FILE} ]]; then
-        echo "downloading"
+        echo "downloading [${new_version}]"
     else
         echo "idle"
     fi
