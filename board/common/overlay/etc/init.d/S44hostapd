@@ -11,6 +11,12 @@ CP_CONF="/data/etc/captive-portal.conf"
 LOG="/var/log/hostapd.log"
 PROG="/usr/sbin/hostapd"
 
+INPUT_VALUE_FILE=/tmp/.captive_portal_button_input
+
+CAPTIVE_PORTAL_START_LEVEL=${CAPTIVE_PORTAL_START_LEVEL:-1}
+CAPTIVE_PORTAL_START_HOLD_SECONDS=${CAPTIVE_PORTAL_START_HOLD_SECONDS:-5}
+CAPTIVE_PORTAL_TIMEOUT=${CAPTIVE_PORTAL_TIMEOUT:-0}
+
 
 test -x ${PROG} || exit 0
 
@@ -27,15 +33,67 @@ function running() {
     killall -0 $(basename ${PROG}) &> /dev/null
 }
 
+function get_button_value() {
+    if [[ -n "${CAPTIVE_PORTAL_START_GPIO}" ]]; then
+        gpio.sh ${CAPTIVE_PORTAL_START_GPIO}
+    elif [[ -s "${INPUT_VALUE_FILE}" ]]; then
+        cat ${INPUT_VALUE_FILE}
+    else
+        expr ${CAPTIVE_PORTAL_START_LEVEL} - 1
+    fi
+}
+
+function read_input() {
+    value=$(od -N 32 -v -t x2 /dev/input/${CAPTIVE_PORTAL_START_INPUT} | grep -E "^0000000 " | cut -d ' ' -f 8)
+    printf "%d" "${value:-0}"
+}
+
+function watch_input() {
+    expr ${CAPTIVE_PORTAL_START_LEVEL} - 1 > ${INPUT_VALUE_FILE}
+    while true; do
+        if value=$(read_input); then
+            echo ${value} > ${INPUT_VALUE_FILE}
+        else
+            sleep 1
+        fi
+    done
+}
+
 function watch_configured() {
     while true; do
         sleep ${CAPTIVE_PORTAL_CONFIGURED_INTERVAL}
         if ! running && ! ${CAPTIVE_PORTAL_CONFIGURED_CMD} &>/dev/null; then
             logger -t hostapd "not configured, starting captive portal"
-            start_hostapd &>/dev/null
+            start_hostapd
         elif running && ${CAPTIVE_PORTAL_CONFIGURED_CMD} &>/dev/null; then
             logger -t hostapd "configured, stopping captive portal"
-            stop_hostapd &>/dev/null
+            stop_hostapd
+        fi
+    done
+}
+
+function watch_button() {
+    count=0
+    while true; do
+        sleep 1
+        if [[ $(get_button_value) == ${CAPTIVE_PORTAL_START_LEVEL} ]]; then
+            count=$((count + 1))
+            logger -t hostapd "button pressed (count=${count})"
+        else
+            if [[ ${count} -gt 0 ]]; then
+                logger -t hostapd "button released"
+            fi
+            count=0
+        fi
+        if [[ ${count} -ge ${CAPTIVE_PORTAL_START_HOLD_SECONDS} ]]; then
+            count=0
+            if ! running; then
+                logger -t hostapd "button held, starting captive portal"
+                start_hostapd
+            elif running; then
+                logger -t hostapd "button held, stopping captive portal"
+                stop_hostapd
+            fi
         fi
     done
 }
@@ -43,22 +101,20 @@ function watch_configured() {
 function start_hostapd() {
     rfkill unblock wlan &>/dev/null
 
-    msg_begin "Preparing AP interfaces"
-
     # wait up to 5 seconds for interfaces
     count=0
     ifaces=${OS_WLAN}
     test -n "${OS_WLAN1}" && ifaces+=" ${OS_WLAN1}"
     while true; do
-        ok=true
+        ok=false
         for iface in ${ifaces}; do
-            ifconfig ${iface} &>/dev/null || ok=false
+            ifconfig ${iface} &>/dev/null && ok=true
         done
         test ${ok} == true && break
         sleep 1
         count=$((${count} + 1))
         if [[ ${count} -ge 5 ]]; then
-            msg_fail "no device"
+            logger -t hostapd "no AP interfaces"
             return 1
         fi
     done
@@ -72,16 +128,12 @@ function start_hostapd() {
             ap_ifaces+="${ap_iface} "
         fi
     done
-    msg_done "${ap_ifaces:-none}"
 
-    msg_begin "Starting hostapd on ${OS_AP}"
+    logger -t hostapd "starting on ${OS_AP}"
     run_conf=/var/run/hostapd.conf
-    cp ${CONF} ${run_conf}
     
     # Replace placeholders
-    hostname=$(hostname)
-    sed -ri "s/^ssid=(.*)%h(.*)$/ssid=\1${hostname}\2/" ${run_conf}
-    sed -ri "s/^interface=%i$/interface=${OS_AP}/" ${run_conf}
+    eval "echo \"$(cat ${CONF})\"" > ${run_conf}
 
     # Determine Wi-Fi driver
     iface=$(cat ${run_conf} | grep interface | cut -d '=' -f 2)
@@ -90,47 +142,54 @@ function start_hostapd() {
     iwconfig ${iface} power off &> /dev/null
     iw ${iface} set power_save off &> /dev/null
     ${PROG} ${run_conf} &> ${LOG} &
-
-    test -n "${module}" && msg_done "done (${module})"|| msg_done
 }
 
 function stop_hostapd() {
-    msg_begin "Stopping hostpad"
     killall $(basename ${PROG}) &>/dev/null
-    msg_done
+    logger -t hostapd "stopped"
 }
 
 function start() {
     if ! [[ -s ${CONF} ]]; then
         return
     fi
-
-    if [[ "${CAPTIVE_PORTAL_ENABLED}" == true ]] && \
-       [[ -n "${CAPTIVE_PORTAL_CONFIGURED_CMD}" ]] && \
-       [[ -z "${CAPTIVE_PORTAL_CONFIGURED_INTERVAL}" ]] && \
-       ${CAPTIVE_PORTAL_CONFIGURED_CMD} &>/dev/null; then
-
-        msg_begin "Starting hostapd"
-        msg_done "already configured"
-        logger -t hostapd "unit is configured"
-        return
-    fi
-
+    
     if [[ "${CAPTIVE_PORTAL_ENABLED}" == true ]]; then
-        timeout=${CAPTIVE_PORTAL_TIMEOUT:-0}
-        if [[ -n "${CAPTIVE_PORTAL_CONFIGURED_INTERVAL}" ]]; then
-            msg_begin "Starting hostapd"
-            logger -t hostapd "configuration watch every ${CAPTIVE_PORTAL_CONFIGURED_INTERVAL}s"
-            watch_configured &
-            msg_done "watch mode"
-        elif [[ ${timeout} -gt 0 ]]; then
-            logger -t hostapd "not configured, starting"
-            start_hostapd
-            logger -t hostapd "will stop after ${timeout}s"
-            sleep ${timeout} && stop_hostapd &>/dev/null &
+        msg_begin "Starting captive-portal"
+        if [[ -n "${CAPTIVE_PORTAL_START_INPUT}" ]]; then
+            watch_input &
+        fi
+        if [[ -n "${CAPTIVE_PORTAL_START_GPIO}" ]] || [[ -n "${CAPTIVE_PORTAL_START_INPUT}" ]]; then
+            watch_button &
+        fi
+
+        if [[ -n "${CAPTIVE_PORTAL_CONFIGURED_CMD}" ]]; then
+            if [[ -z "${CAPTIVE_PORTAL_CONFIGURED_INTERVAL}" ]] && ${CAPTIVE_PORTAL_CONFIGURED_CMD} &>/dev/null; then
+                logger -t hostapd "unit is configured"
+                msg_done "unit is configured"
+            else
+                logger -t hostapd "not configured, starting"
+                if [[ -n "${CAPTIVE_PORTAL_CONFIGURED_INTERVAL}" ]]; then
+                    logger -t hostapd "configuration watch every ${CAPTIVE_PORTAL_CONFIGURED_INTERVAL}s"
+                    watch_configured &
+                    msg_done "configuration watch mode"
+                else
+                    start_hostapd
+                    if [[ ${CAPTIVE_PORTAL_TIMEOUT} -gt 0 ]]; then
+                        logger -t hostapd "will stop after ${CAPTIVE_PORTAL_TIMEOUT}s"
+                        sleep ${CAPTIVE_PORTAL_TIMEOUT} && stop_hostapd &
+                        msg_done "timeout mode"
+                    else
+                        logger -t hostapd "will run indefinitely"
+                        msg_done "always-on mode"
+                    fi
+                fi
+            fi
         fi
     else
+        msg_begin "Starting hostapd"
         start_hostapd
+        msg_done
     fi
 }
 
@@ -139,8 +198,10 @@ function stop() {
         return
     fi
 
+    msg_begin "Stopping hostapd"
     stop_hostapd
-    ps | grep $(basename ${PROG}) | grep -v $$ | grep -v grep | tr -s ' ' | sed -e 's/^\s//' | cut -d ' ' -f 1 | xargs -r kill
+    ps | grep hostapd | grep -v $$ | grep -v grep | tr -s ' ' | sed -e 's/^\s//' | cut -d ' ' -f 1 | xargs -r kill
+    msg_done
 }
 
 case "$1" in
