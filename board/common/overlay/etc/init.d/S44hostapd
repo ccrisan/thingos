@@ -17,6 +17,8 @@ CAPTIVE_PORTAL_START_LEVEL=${CAPTIVE_PORTAL_START_LEVEL:-1}
 CAPTIVE_PORTAL_START_HOLD_SECONDS=${CAPTIVE_PORTAL_START_HOLD_SECONDS:-5}
 CAPTIVE_PORTAL_TIMEOUT=${CAPTIVE_PORTAL_TIMEOUT:-0}
 
+DNSMASQ_CONF=/var/run/dnsmasq.conf
+
 test -x ${PROG} || exit 0
 test -n "${OS_VERSION}" || source /etc/init.d/base
 CONF=$(select_conf ${SYS_CONF} ${BOOT_CONF} ${USER_CONF})
@@ -96,6 +98,16 @@ function watch_button() {
     done
 }
 
+function assign_iface_ip() {
+    hostapd_conf=/var/run/hostapd.conf
+    test -s ${DNSMASQ_CONF} || return
+    dnsmasq_ip=$(cat ${DNSMASQ_CONF} | grep range | cut -d '=' -f 2 | cut -d '.' -f 1,2,3).1
+    dnsmasq_iface=$(cat ${DNSMASQ_CONF} | grep interface | cut -d '=' -f 2)
+    hostapd_iface=$(cat ${hostapd_conf} | grep interface | cut -d '=' -f 2)
+    test "${dnsmasq_iface}" == "${hostapd_iface}" || test -z "${dnsmasq_iface}" || return
+    ifconfig ${hostapd_iface} ${dnsmasq_ip}
+}
+
 function start_hostapd() {
     rfkill unblock wlan &>/dev/null
 
@@ -127,7 +139,6 @@ function start_hostapd() {
         fi
     done
 
-    logger -t hostapd "starting on ${OS_AP}"
     run_conf=/var/run/hostapd.conf
     
     # Replace placeholders
@@ -137,9 +148,13 @@ function start_hostapd() {
     iface=$(cat ${run_conf} | grep interface | cut -d '=' -f 2)
     module=$(basename $(readlink /sys/class/net/${iface}/device/driver/module 2>/dev/null) 2>/dev/null)
 
+    logger -t hostapd "starting on ${iface} with driver ${module}"
+
     iwconfig ${iface} power off &> /dev/null
     iw ${iface} set power_save off &> /dev/null
     ${PROG} ${run_conf} &> ${LOG} &
+    
+    ( sleep 1 && assign_iface_ip ) &
 }
 
 function stop_hostapd() {
