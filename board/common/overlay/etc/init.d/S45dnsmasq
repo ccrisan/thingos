@@ -2,35 +2,33 @@
 
 SYS_CONF="/etc/dnsmasq.conf"
 BOOT_CONF="/boot/dnsmasq.conf"
-CONF="/data/etc/dnsmasq.conf"
+USER_CONF="/data/etc/dnsmasq.conf"
 
 SYS_CP_CONF="/etc/captive-portal.conf"
 BOOT_CP_CONF="/boot/captive-portal.conf"
-CP_CONF="/data/etc/captive-portal.conf"
+USER_CP_CONF="/data/etc/captive-portal.conf"
 
 LOG="/var/log/dnsmasq.log"
 PROG="/usr/sbin/dnsmasq"
 
-
 test -x ${PROG} || exit 0
-
 test -n "${OS_VERSION}" || source /etc/init.d/base
-
-prepare_conf ${CONF} ${SYS_CONF} ${BOOT_CONF}
-test -s ${CONF} || exit 0
+CONF=$(select_conf ${SYS_CONF} ${BOOT_CONF} ${USER_CONF})
+test -s "${CONF}" || exit 0
 
 test -s ${SYS_CP_CONF} && source ${SYS_CP_CONF}
 test -s ${BOOT_CP_CONF} && source ${BOOT_CP_CONF}
-test -s ${CP_CONF} && source ${CP_CONF}
+test -s ${USER_CP_CONF} && source ${USER_CP_CONF}
 
 
 function start() {
     msg_begin "Starting dnsmasq"
     
     run_conf=/var/run/dnsmasq.conf
-    cp ${CONF} ${run_conf}
 
-    sed -ri "s/^interface=%i$/interface=${OS_AP}/" ${run_conf}
+    # Replace placeholders
+    eval "echo \"$(cat ${CONF})\"" > ${run_conf}
+
     ip=$(cat ${run_conf} | grep range | cut -d '=' -f 2 | cut -d '.' -f 1,2,3).1
     iface=$(cat ${run_conf} | grep interface | cut -d '=' -f 2)
     

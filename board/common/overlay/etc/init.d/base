@@ -63,3 +63,23 @@ prepare_conf() {
     fi
 }
 
+select_conf() {
+    # $1 - system config file
+    # $2 - boot config file
+    # $3 - user config file
+
+    # Selects and returns the first existing (and with size > 0) file, in this order:
+    #  * user config file
+    #  * boot config file
+    #  * system config file
+
+    system_conf="$1"
+    boot_conf="$2"
+    user_conf="$3"
+    
+    test -s "${user_conf}" && echo "${user_conf}" && return
+    test -s "${boot_conf}" && echo "${boot_conf}" && return
+    test -s "${system_conf}" && echo "${system_conf}" && return
+    
+    return 1
+}

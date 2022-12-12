@@ -2,11 +2,11 @@
 
 SYS_CONF="/etc/hostapd.conf"
 BOOT_CONF="/boot/hostapd.conf"
-CONF="/data/etc/hostapd.conf"
+USER_CONF="/data/etc/hostapd.conf"
 
 SYS_CP_CONF="/etc/captive-portal.conf"
 BOOT_CP_CONF="/boot/captive-portal.conf"
-CP_CONF="/data/etc/captive-portal.conf"
+USER_CP_CONF="/data/etc/captive-portal.conf"
 
 LOG="/var/log/hostapd.log"
 PROG="/usr/sbin/hostapd"
@@ -17,16 +17,14 @@ CAPTIVE_PORTAL_START_LEVEL=${CAPTIVE_PORTAL_START_LEVEL:-1}
 CAPTIVE_PORTAL_START_HOLD_SECONDS=${CAPTIVE_PORTAL_START_HOLD_SECONDS:-5}
 CAPTIVE_PORTAL_TIMEOUT=${CAPTIVE_PORTAL_TIMEOUT:-0}
 
-
 test -x ${PROG} || exit 0
-
 test -n "${OS_VERSION}" || source /etc/init.d/base
-
-prepare_conf ${CONF} ${SYS_CONF} ${BOOT_CONF}
+CONF=$(select_conf ${SYS_CONF} ${BOOT_CONF} ${USER_CONF})
+test -s "${CONF}" || exit 0
 
 test -s ${SYS_CP_CONF} && source ${SYS_CP_CONF}
 test -s ${BOOT_CP_CONF} && source ${BOOT_CP_CONF}
-test -s ${CP_CONF} && source ${CP_CONF}
+test -s ${USER_CP_CONF} && source ${USER_CP_CONF}
 
 
 function running() {
@@ -150,10 +148,6 @@ function stop_hostapd() {
 }
 
 function start() {
-    if ! [[ -s ${CONF} ]]; then
-        return
-    fi
-    
     if [[ "${CAPTIVE_PORTAL_ENABLED}" == true ]]; then
         msg_begin "Starting captive-portal"
         if [[ -n "${CAPTIVE_PORTAL_START_INPUT}" ]]; then
@@ -194,10 +188,6 @@ function start() {
 }
 
 function stop() {
-    if ! [[ -s ${CONF} ]]; then
-        return
-    fi
-
     msg_begin "Stopping hostapd"
     stop_hostapd
     ps | grep hostapd | grep -v $$ | grep -v grep | tr -s ' ' | sed -e 's/^\s//' | cut -d ' ' -f 1 | xargs -r kill
