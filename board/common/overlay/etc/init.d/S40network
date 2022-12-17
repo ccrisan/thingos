@@ -11,6 +11,7 @@ SYS_INTERFACES_CONF="/etc/network/interfaces"
 BOOT_INTERFACES_CONF="/boot/network/interfaces"
 INTERFACES_CONF="/data/etc/network/interfaces"
 
+CP_CONF="/etc/captive-portal.conf"
 CONNMAN_CONF="/etc/connman/main.conf"
 
 LINK_NEGO_TIMEOUT=10
@@ -21,6 +22,7 @@ test -s ${CONNMAN_CONF} && exit 0
 test -n "${OS_VERSION}" || source /etc/init.d/base
 
 source ${NETWATCH_CONF}
+source ${CP_CONF}
 
 prepare_conf ${STATIC_CONF} ${SYS_STATIC_CONF} ${BOOT_STATIC_CONF}
 test -r ${STATIC_CONF} && source ${STATIC_CONF}
@@ -220,7 +222,7 @@ function start() {
     fi
 
     if [[ "${eth_ok}" != "ok" ]] && [[ "${wlan_ok}" != "ok" ]] && [[ "${ppp_ok}" != "ok" ]]; then
-        if [[ "${LINK_WATCH}" == "true" ]]; then
+        if [[ "${LINK_WATCH}" == "true" ]] && ${CAPTIVE_PORTAL_CONFIGURED_CMD}; then
             panic_action network "no network connection available"
             return 1
         else
@@ -257,7 +259,7 @@ function start() {
     # re-evalutate default route, as it might have changed with start_eth or static IP
     def_route_ok=$(ip route get 1.1.1.1 &>/dev/null && echo "ok")
     if [[ "${def_route_ok}" != "ok" ]]; then
-        if [[ "${IP_WATCH}" == "true" ]]; then
+        if [[ "${IP_WATCH}" == "true" ]] && ${CAPTIVE_PORTAL_CONFIGURED_CMD}; then
             panic_action network "no default route"
             return 1
         else

@@ -1,10 +1,11 @@
 #!/bin/bash
 
 CONF="/etc/netwatch.conf"
-
+CP_CONF="/etc/captive-portal.conf"
 
 test -s ${CONF} || exit 0
 source ${CONF}
+source ${CP_CONF}
 
 test -n "${OS_VERSION}" || source /etc/init.d/base
 
@@ -36,7 +37,11 @@ function gw_watch() {
                 count=$((${count} + 1))
                 continue
             else
-                panic_action netwatch "gateway not reachable"
+                if ${CAPTIVE_PORTAL_CONFIGURED_CMD}; then
+                    panic_action netwatch "gateway not reachable"
+                else
+                    logger -t netwatch "gateway not reachable"
+                fi
             fi
         fi
     done
@@ -57,7 +62,11 @@ function net_watch() {
                 count=$((${count} + 1))
                 continue
             else
-                panic_action netwatch "cannot connect to ${NET_WATCH_HOST}:${NET_WATCH_PORT}"
+                if ${CAPTIVE_PORTAL_CONFIGURED_CMD}; then
+                    panic_action netwatch "cannot connect to ${NET_WATCH_HOST}:${NET_WATCH_PORT}"
+                else
+                    logger -t netwatch "cannot connect to ${NET_WATCH_HOST}:${NET_WATCH_PORT}"
+                fi
             fi
         fi
     done
@@ -76,7 +85,7 @@ function start() {
 
 function stop() {
     msg_begin "Stopping netwatch"
-    ps | grep netwatch | grep -v $$ | grep -v grep | tr -s ' ' | sed -e 's/^\s//' | cut -d ' ' -f 1 | xargs -r kill
+    ps | grep $(basename $0) | grep -v $$ | grep -v grep | tr -s ' ' | sed -e 's/^\s//' | cut -d ' ' -f 1 | xargs -r kill
     msg_done
 }
 

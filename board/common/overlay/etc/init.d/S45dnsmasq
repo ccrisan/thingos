@@ -4,9 +4,7 @@ SYS_CONF="/etc/dnsmasq.conf"
 BOOT_CONF="/boot/dnsmasq.conf"
 USER_CONF="/data/etc/dnsmasq.conf"
 
-SYS_CP_CONF="/etc/captive-portal.conf"
-BOOT_CP_CONF="/boot/captive-portal.conf"
-USER_CP_CONF="/data/etc/captive-portal.conf"
+CP_CONF="/etc/captive-portal.conf"
 
 LOG="/var/log/dnsmasq.log"
 PROG="/usr/sbin/dnsmasq"
@@ -16,9 +14,7 @@ test -n "${OS_VERSION}" || source /etc/init.d/base
 CONF=$(select_conf ${SYS_CONF} ${BOOT_CONF} ${USER_CONF})
 test -s "${CONF}" || exit 0
 
-test -s ${SYS_CP_CONF} && source ${SYS_CP_CONF}
-test -s ${BOOT_CP_CONF} && source ${BOOT_CP_CONF}
-test -s ${USER_CP_CONF} && source ${USER_CP_CONF}
+test -s ${CP_CONF}
 
 
 function start() {

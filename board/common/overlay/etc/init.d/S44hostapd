@@ -4,18 +4,12 @@ SYS_CONF="/etc/hostapd.conf"
 BOOT_CONF="/boot/hostapd.conf"
 USER_CONF="/data/etc/hostapd.conf"
 
-SYS_CP_CONF="/etc/captive-portal.conf"
-BOOT_CP_CONF="/boot/captive-portal.conf"
-USER_CP_CONF="/data/etc/captive-portal.conf"
+CP_CONF="/etc/captive-portal.conf"
 
 LOG="/var/log/hostapd.log"
 PROG="/usr/sbin/hostapd"
 
 INPUT_VALUE_FILE=/tmp/.captive_portal_button_input
-
-CAPTIVE_PORTAL_START_LEVEL=${CAPTIVE_PORTAL_START_LEVEL:-1}
-CAPTIVE_PORTAL_START_HOLD_SECONDS=${CAPTIVE_PORTAL_START_HOLD_SECONDS:-5}
-CAPTIVE_PORTAL_TIMEOUT=${CAPTIVE_PORTAL_TIMEOUT:-0}
 
 DNSMASQ_CONF=/var/run/dnsmasq.conf
 
@@ -24,9 +18,7 @@ test -n "${OS_VERSION}" || source /etc/init.d/base
 CONF=$(select_conf ${SYS_CONF} ${BOOT_CONF} ${USER_CONF})
 test -s "${CONF}" || exit 0
 
-test -s ${SYS_CP_CONF} && source ${SYS_CP_CONF}
-test -s ${BOOT_CP_CONF} && source ${BOOT_CP_CONF}
-test -s ${USER_CP_CONF} && source ${USER_CP_CONF}
+source ${CP_CONF}
 
 
 function running() {
@@ -98,17 +90,7 @@ function watch_button() {
     done
 }
 
-function assign_iface_ip() {
-    hostapd_conf=/var/run/hostapd.conf
-    test -s ${DNSMASQ_CONF} || return
-    dnsmasq_ip=$(cat ${DNSMASQ_CONF} | grep range | cut -d '=' -f 2 | cut -d '.' -f 1,2,3).1
-    dnsmasq_iface=$(cat ${DNSMASQ_CONF} | grep interface | cut -d '=' -f 2)
-    hostapd_iface=$(cat ${hostapd_conf} | grep interface | cut -d '=' -f 2)
-    test "${dnsmasq_iface}" == "${hostapd_iface}" || test -z "${dnsmasq_iface}" || return
-    ifconfig ${hostapd_iface} ${dnsmasq_ip}
-}
-
-function start_hostapd() {
+function configure_ifaces() {
     rfkill unblock wlan &>/dev/null
 
     # wait up to 5 seconds for interfaces
@@ -138,7 +120,21 @@ function start_hostapd() {
             ap_ifaces+="${ap_iface} "
         fi
     done
+    
+    logger -t hostapd "configured interfaces: ${ap_ifaces[@]}"
+}
 
+function assign_iface_ip() {
+    hostapd_conf=/var/run/hostapd.conf
+    test -s ${DNSMASQ_CONF} || return
+    dnsmasq_ip=$(cat ${DNSMASQ_CONF} | grep range | cut -d '=' -f 2 | cut -d '.' -f 1,2,3).1
+    dnsmasq_iface=$(cat ${DNSMASQ_CONF} | grep interface | cut -d '=' -f 2)
+    hostapd_iface=$(cat ${hostapd_conf} | grep interface | cut -d '=' -f 2)
+    test "${dnsmasq_iface}" == "${hostapd_iface}" || test -z "${dnsmasq_iface}" || return
+    ifconfig ${hostapd_iface} ${dnsmasq_ip}
+}
+
+function start_hostapd() {
     run_conf=/var/run/hostapd.conf
     
     # Replace placeholders
@@ -163,6 +159,8 @@ function stop_hostapd() {
 }
 
 function start() {
+    configure_ifaces
+
     if [[ "${CAPTIVE_PORTAL_ENABLED}" == true ]]; then
         msg_begin "Starting captive-portal"
         if [[ -n "${CAPTIVE_PORTAL_START_INPUT}" ]]; then
