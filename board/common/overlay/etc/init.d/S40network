@@ -222,7 +222,16 @@ function start() {
     fi
 
     if [[ "${eth_ok}" != "ok" ]] && [[ "${wlan_ok}" != "ok" ]] && [[ "${ppp_ok}" != "ok" ]]; then
-        if [[ "${LINK_WATCH}" == "true" ]] && ${CAPTIVE_PORTAL_CONFIGURED_CMD}; then
+        panic=false
+        if [[ "${LINK_WATCH}" == true ]]; then
+            if [[ ${CAPTIVE_PORTAL_ENABLED} == false ]] || \
+               [[ -z "${CAPTIVE_PORTAL_CONFIGURED_CMD}" ]] || \
+               ${CAPTIVE_PORTAL_CONFIGURED_CMD} &>/dev/null; then
+
+               panic=true
+           fi
+        fi
+        if [[ ${panic} == true ]]; then
             panic_action network "no network connection available"
             return 1
         else
@@ -259,7 +268,17 @@ function start() {
     # re-evalutate default route, as it might have changed with start_eth or static IP
     def_route_ok=$(ip route get 1.1.1.1 &>/dev/null && echo "ok")
     if [[ "${def_route_ok}" != "ok" ]]; then
-        if [[ "${IP_WATCH}" == "true" ]] && ${CAPTIVE_PORTAL_CONFIGURED_CMD}; then
+        panic=false
+        if [[ "${IP_WATCH}" == true ]]; then
+            if [[ ${CAPTIVE_PORTAL_ENABLED} == false ]] || \
+               [[ -z "${CAPTIVE_PORTAL_CONFIGURED_CMD}" ]] || \
+               ${CAPTIVE_PORTAL_CONFIGURED_CMD} &>/dev/null; then
+
+               panic=true
+           fi
+        fi
+    
+        if [[ ${panic} == true ]]; then
             panic_action network "no default route"
             return 1
         else

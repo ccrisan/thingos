@@ -37,7 +37,7 @@ function gw_watch() {
                 count=$((${count} + 1))
                 continue
             else
-                if ${CAPTIVE_PORTAL_CONFIGURED_CMD}; then
+                if eval ${CAPTIVE_PORTAL_CONFIGURED_CMD} &>/dev/null; then
                     panic_action netwatch "gateway not reachable"
                 else
                     logger -t netwatch "gateway not reachable"
@@ -62,7 +62,7 @@ function net_watch() {
                 count=$((${count} + 1))
                 continue
             else
-                if ${CAPTIVE_PORTAL_CONFIGURED_CMD}; then
+                if eval ${CAPTIVE_PORTAL_CONFIGURED_CMD} &>/dev/null; then
                     panic_action netwatch "cannot connect to ${NET_WATCH_HOST}:${NET_WATCH_PORT}"
                 else
                     logger -t netwatch "cannot connect to ${NET_WATCH_HOST}:${NET_WATCH_PORT}"

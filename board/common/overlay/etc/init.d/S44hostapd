@@ -51,19 +51,6 @@ function watch_input() {
     done
 }
 
-function watch_configured() {
-    while true; do
-        sleep ${CAPTIVE_PORTAL_CONFIGURED_INTERVAL}
-        if ! running && ! ${CAPTIVE_PORTAL_CONFIGURED_CMD} &>/dev/null; then
-            logger -t hostapd "not configured, starting captive portal"
-            start_hostapd
-        elif running && ${CAPTIVE_PORTAL_CONFIGURED_CMD} &>/dev/null; then
-            logger -t hostapd "configured, stopping captive portal"
-            stop_hostapd
-        fi
-    done
-}
-
 function watch_button() {
     count=0
     while true; do
@@ -88,6 +75,10 @@ function watch_button() {
             fi
         fi
     done
+}
+
+function network_ok() {
+    ip route | grep -q default
 }
 
 function configure_ifaces() {
@@ -171,27 +162,23 @@ function start() {
         fi
 
         if [[ -n "${CAPTIVE_PORTAL_CONFIGURED_CMD}" ]]; then
-            if [[ -z "${CAPTIVE_PORTAL_CONFIGURED_INTERVAL}" ]] && ${CAPTIVE_PORTAL_CONFIGURED_CMD} &>/dev/null; then
+            if eval ${CAPTIVE_PORTAL_CONFIGURED_CMD} &>/dev/null; then
                 logger -t hostapd "unit is configured"
                 msg_done "unit is configured"
             else
                 logger -t hostapd "not configured, starting"
-                if [[ -n "${CAPTIVE_PORTAL_CONFIGURED_INTERVAL}" ]]; then
-                    logger -t hostapd "configuration watch every ${CAPTIVE_PORTAL_CONFIGURED_INTERVAL}s"
-                    watch_configured &
-                    msg_done "configuration watch mode"
+                start_hostapd
+                if [[ ${CAPTIVE_PORTAL_TIMEOUT} -gt 0 ]]; then
+                    logger -t hostapd "will stop after ${CAPTIVE_PORTAL_TIMEOUT}s"
+                    msg_done "timeout mode"
+                    sleep ${CAPTIVE_PORTAL_TIMEOUT} && stop_hostapd &
                 else
-                    start_hostapd
-                    if [[ ${CAPTIVE_PORTAL_TIMEOUT} -gt 0 ]]; then
-                        logger -t hostapd "will stop after ${CAPTIVE_PORTAL_TIMEOUT}s"
-                        sleep ${CAPTIVE_PORTAL_TIMEOUT} && stop_hostapd &
-                        msg_done "timeout mode"
-                    else
-                        logger -t hostapd "will run indefinitely"
-                        msg_done "always-on mode"
-                    fi
+                    logger -t hostapd "will run indefinitely"
+                    msg_done "always-on mode"
                 fi
             fi
+        else
+            msg_done "button mode"
         fi
     else
         msg_begin "Starting hostapd"
