@@ -39,7 +39,6 @@ rm -f ${TARGET}/bin/more
 rm -f ${TARGET}/bin/wdctl
 rm -f ${TARGET}/usr/sbin/readprofile
 rm -f ${TARGET}/sbin/nologin
-rm -f ${TARGET}/bin/mountpoint
 rm -f ${TARGET}/sbin/ldattach
 rm -f ${TARGET}/usr/sbin/ldattach
 rm -f ${TARGET}/sbin/slattach
@@ -197,6 +196,7 @@ rm -f ${TARGET}/etc/init.d/S10udev
 rm -f ${TARGET}/etc/init.d/S15watchdog
 rm -f ${TARGET}/etc/init.d/S20urandom
 rm -f ${TARGET}/etc/init.d/S21rngd
+rm -f ${TARGET}/etc/init.d/S30cgroupfs
 rm -f ${TARGET}/etc/init.d/S35iptables
 rm -f ${TARGET}/etc/init.d/S40bluetooth
 rm -f ${TARGET}/etc/init.d/S45connman

@@ -31,6 +31,15 @@ function mount_overlay() {
     test $? == 0 && msg_done || msg_fail
 }
 
+function mount_cgroupfs() {
+    kernel_maj_ver=$(uname -r | cut -d . -f 1)
+    if [[ ${kernel_maj_ver} -ge 5 ]]; then
+        /bin/mount -t cgroup2 cgroup2 /sys/fs/cgroup
+    else
+        /usr/bin/cgroupfs-mount
+    fi
+}
+
 function install_factory_defaults() {
     if [[ -s /boot/factory-defaults.tar.xz ]]; then
         msg_begin "Installing factory defaults"
@@ -65,6 +74,7 @@ case "$1" in
             rm /data/.install_factory_defaults
             install_factory_defaults
         fi
+        mount_cgroupfs 2>/dev/null
 
         # we need to source conf again, now that /data is available
         source /etc/init.d/os_conf
