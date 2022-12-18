@@ -8,6 +8,7 @@ CP_CONF="/etc/captive-portal.conf"
 
 LOG="/var/log/hostapd.log"
 PROG="/usr/sbin/hostapd"
+DNSMASQ_LOG="/var/log/dnsmasq.log"
 
 INPUT_VALUE_FILE=/tmp/.captive_portal_button_input
 
@@ -125,9 +126,23 @@ function assign_iface_ip() {
     ifconfig ${hostapd_iface} ${dnsmasq_ip}
 }
 
+function after_captive_portal_timeout() {
+    if tail -n 9 ${DNSMASQ_LOG} | grep -q DHCPREQUEST; then
+        logger -t hostapd "client connected within timeout, keeping captive portal on"
+        return
+    fi
+
+    if [[ ${CAPTIVE_PORTAL_TIMEOUT_REBOOT} == true ]]; then
+        logger -t hostapd "rebooting on timeout"
+        reboot
+    else
+        logger -t hostapd "stopping on timeout"
+        stop_hostapd
+    fi
+}
+
 function start_hostapd() {
-    # Stop wpa_supplicant if running in captive portal mode,
-    # since it's very likely they both use the same interface
+    # Stop wpa_supplicant if running in captive portal mode
     if [[ ${CAPTIVE_PORTAL_ENABLED} == true ]]; then
         /etc/init.d/S35wifi stop &>/dev/null
         panic_inhibit
@@ -178,7 +193,7 @@ function start() {
                 if [[ ${CAPTIVE_PORTAL_TIMEOUT} -gt 0 ]]; then
                     logger -t hostapd "will stop after ${CAPTIVE_PORTAL_TIMEOUT}s"
                     msg_done "timeout mode"
-                    sleep ${CAPTIVE_PORTAL_TIMEOUT} && stop_hostapd &
+                    sleep ${CAPTIVE_PORTAL_TIMEOUT} && after_captive_portal_timeout &>/dev/null &
                 else
                     logger -t hostapd "will run indefinitely"
                     msg_done "always-on mode"
