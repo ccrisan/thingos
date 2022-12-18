@@ -1,8 +1,7 @@
-
 _SYS_CONF="/etc/os.conf"
-_PLATFORM_CONF="/data/etc/os-platform.conf"
-_BOOT_CONF="/boot/os.conf"
+_PLATFORM_CONF="/etc/os-platform.conf"
 _DATA_CONF="/data/etc/os.conf"
+_BOOT_CONF="/boot/os.conf"
 
 
 # source in all conf files in order of precedence
@@ -22,4 +21,4 @@ if [[ -f ${_BOOT_CONF} ]]; then
     source ${_BOOT_CONF}
 fi
 
-unset _SYS_CONF _PLATFORM_CONF _BOOT_CONF _DATA_CONF
+unset _SYS_CONF _PLATFORM_CONF _DATA_CONF _BOOT_CONF
