@@ -1,9 +1,11 @@
 #!/bin/bash
 
+NET_LED="green:wan"
+
 case "$1" in
     start)
-        echo 0 > /sys/class/leds/LED2/brightness
-        echo 1 > /sys/class/leds/LED2/brightness
+        echo 0 > /sys/class/leds/${NET_LED}/brightness
+        echo 1 > /sys/class/leds/${NET_LED}/brightness
         ;;
 
     stop)

@@ -1,5 +1,7 @@
 #!/bin/bash
 
-for led in /sys/class/leds/{LED2,LED3,status_led}/; do
+STATUS_LED="nanopi:blue:status"
+
+for led in /sys/class/leds/{green:wan,green:lan,nanopi:blue:status}/; do
     echo 0 > ${led}/brightness
 done

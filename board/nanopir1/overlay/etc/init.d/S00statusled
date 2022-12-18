@@ -1,9 +1,11 @@
 #!/bin/bash
 
+STATUS_LED="nanopi:blue:status"
+
 case "$1" in
     start)
-        echo 0 > /sys/class/leds/status_led/brightness
-        echo 1 > /sys/class/leds/status_led/brightness
+        echo 0 > /sys/class/leds/${STATUS_LED}/brightness
+        echo 1 > /sys/class/leds/${STATUS_LED}/brightness
         ;;
 
     stop)
