@@ -126,6 +126,13 @@ function assign_iface_ip() {
 }
 
 function start_hostapd() {
+    # Stop wpa_supplicant if running in captive portal mode,
+    # since it's very likely they both use the same interface
+    if [[ ${CAPTIVE_PORTAL_ENABLED} == true ]]; then
+        /etc/init.d/S35wifi stop &>/dev/null
+        panic_inhibit
+    fi
+
     run_conf=/var/run/hostapd.conf
     
     # Replace placeholders
