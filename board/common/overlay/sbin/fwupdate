@@ -282,7 +282,6 @@ function do_download() {
     rm -f ${FLASH_BOOT_DONE_FILE}
     rm -f ${FLASH_REBOOT_STARTED_FILE}
     rm -f ${ERROR_FILE}
-    touch ${DOWNLOAD_STARTED_FILE}
 
     trap cleanup_on_exit EXIT
 
@@ -341,6 +340,7 @@ function do_download() {
     fi
 
     echo ${version} > ${VER_FILE}
+    touch ${DOWNLOAD_STARTED_FILE}
 
     curl_opts="-S -f -L"
     curl ${curl_opts} -o ${outfile} "${url}" &> ${CURL_LOG_FILE} &
@@ -583,7 +583,7 @@ function do_flash_reboot() {
 
 function show_status() {
     if [[ -f ${VER_FILE} ]]; then
-        new_version=$(cat ${VER_FILE})
+        new_version=$(cat ${VER_FILE} 2>&1 || true)
     fi
 
     if [[ -f ${ERROR_FILE} ]]; then
