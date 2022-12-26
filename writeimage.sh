@@ -177,6 +177,7 @@ fi
 
 msg "unmounting sdcard"
 sync
+sleep 1
 umount "$BOOT"
 rmdir "$BOOT"
 
