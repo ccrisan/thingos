@@ -20,6 +20,8 @@ function exit_usage() {
     echo "           shows the current firmware installing process status; see below"
     echo "       fwupdate install <version|latest|url|file>"
     echo "           performs all the operations necessary for installing a certain firmware version"
+    echo "       fwupdate auto [on|off]"
+    echo "           controls the automatic firmware update mechanism"
     echo ""
     echo "Statuses:"
     echo "       idle"
@@ -612,6 +614,13 @@ function show_status() {
 #### Install ####
 
 function do_install() {
+    latest=($(show_latest))
+    latest_version=${latest[0]}
+    if [[ "$1" == latest ]] && [[ "${OS_VERSION}" == "${latest_version}" ]]; then
+        echo "already running latest version"
+        return
+    fi
+
     echo "installing $1"
 
     do_download "$1"
@@ -624,6 +633,40 @@ function do_install() {
     show_status
 
     do_flash_reboot
+}
+
+
+#### Automatic firmware update ####
+
+function show_auto() {
+    if [[ ${OS_FIRMWARE_AUTO_UPDATE} == true ]]; then
+        echo on
+    else
+        echo off
+    fi
+}
+
+function set_auto() {
+    if [[ -s /data/etc/os.conf ]]; then
+        cat /data/etc/os.conf | grep -v OS_FIRMWARE_AUTO_UPDATE > /data/etc/os.conf.new
+        mv /data/etc/os.conf.new /data/etc/os.conf
+    fi
+
+    echo "OS_FIRMWARE_AUTO_UPDATE=$1" >> /data/etc/os.conf
+}
+
+function do_auto() {
+    if [[ -z "$1" ]]; then
+        show_auto
+    elif [[ "$1" == on ]]; then
+        set_auto true
+        source /etc/init.d/os_conf
+        show_auto
+    elif [[ "$1" == off ]]; then
+        set_auto false
+        source /etc/init.d/os_conf
+        show_auto
+    fi
 }
 
 
@@ -671,6 +714,10 @@ case "$1" in
         fi
 
         do_install "$2"
+        ;;
+
+    auto)
+        do_auto ${@:2}
         ;;
 
     *)
