@@ -2,4 +2,4 @@
 0 2 * * 0 /usr/sbin/https-update
 */15 * * * * /usr/sbin/dyndns-update
 */15 * * * * date +%s > /var/lib/saved_date
-0 * * * * sleep $((RANDOM % 86400)) && source /etc/init.d/os.conf && test "${OS_FIRMWARE_AUTO_UPDATE}" -eq true && /sbin/fwupdate install latest >> /var/log/fwupdate-auto.log
+0 * * * * sleep $((RANDOM % 86400)) && source /etc/init.d/os_conf && test "${OS_FIRMWARE_AUTO_UPDATE}" == true && /sbin/fwupdate install latest >> /var/log/fwupdate-auto.log
