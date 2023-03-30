@@ -1,0 +1,5 @@
+config BR2_PACKAGE_CHIRPSTACK_GATEWAY_BRIDGE
+	bool "chirpstack-gateway-bridge"
+	depends on BR2_PACKAGE_HOST_GO_TARGET_ARCH_SUPPORTS
+	help
+	  https://github.com/chirpstack/chirpstack-gateway-bridge
