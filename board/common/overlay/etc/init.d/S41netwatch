@@ -37,7 +37,7 @@ function gw_watch() {
                 count=$((${count} + 1))
                 continue
             else
-                panic_action netwatch "gateway not reachable"
+                panic action netwatch "gateway not reachable"
             fi
         fi
     done
@@ -58,7 +58,7 @@ function net_watch() {
                 count=$((${count} + 1))
                 continue
             else
-                panic_action netwatch "cannot connect to ${NET_WATCH_HOST}:${NET_WATCH_PORT}"
+                panic action netwatch "cannot connect to ${NET_WATCH_HOST}:${NET_WATCH_PORT}"
             fi
         fi
     done

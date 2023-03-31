@@ -46,7 +46,7 @@ function watch_adapter() {
                 count=$((count + 1))
                 logger -t bluetooth "bluetooth adapter not responding"
             else
-                panic_action bluetooth "bluetooth adapter not responding"
+                panic action bluetooth "bluetooth adapter not responding"
             fi
         fi
     done

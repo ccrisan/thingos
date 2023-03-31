@@ -43,7 +43,7 @@ function watch_eth() {
                 count=$((${count} + 5))
                 logger -t network "ethernet disconnected"
             else
-                panic_action network "ethernet disconnected for ${LINK_WATCH_TIMEOUT} seconds"
+                panic action network "ethernet disconnected for ${LINK_WATCH_TIMEOUT} seconds"
             fi
         fi
     done
@@ -61,7 +61,7 @@ function watch_ip() {
                 count=$((${count} + 5))
                 logger -t network "${iface} has no IP address"
             else
-                panic_action network "${iface} had no IP address for ${IP_WATCH_TIMEOUT} seconds"
+                panic action network "${iface} had no IP address for ${IP_WATCH_TIMEOUT} seconds"
             fi
         fi
     done
@@ -232,7 +232,7 @@ function start() {
            fi
         fi
         if [[ ${panic} == true ]]; then
-            panic_action network "no network connection available"
+            panic action network "no network connection available"
             return 1
         else
             logger -t network "no network connection available"
@@ -279,7 +279,7 @@ function start() {
         fi
     
         if [[ ${panic} == true ]]; then
-            panic_action network "no default route"
+            panic action network "no default route"
             return 1
         else
             logger -t network "no default route"

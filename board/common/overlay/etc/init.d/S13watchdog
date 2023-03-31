@@ -29,7 +29,7 @@ start_watchtemp() {
         temp=$(cat /sys/class/thermal/${THERMAL_ZONE}/temp)
         temp=$((temp / 1000))
         if [[ "${temp}" -gt ${MAX_TEMP} ]]; then
-            panic_action watchdog "temperature too high: ${temp} > ${MAX_TEMP}"
+            panic action watchdog "temperature too high: ${temp} > ${MAX_TEMP}"
         fi
     done
 }

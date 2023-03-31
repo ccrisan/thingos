@@ -498,7 +498,7 @@ function do_flash_boot() {
     umount /boot
     
     # Prevent unwanted reboots during firmware install
-    panic_inhibit
+    panic inhibit
     mount -o remount,rw /
     mv /sbin/reboot /sbin/reboot.bak
     ln -s /bin/true /sbin/reboot

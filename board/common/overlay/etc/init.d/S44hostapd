@@ -145,7 +145,7 @@ function start_hostapd() {
     # Stop wpa_supplicant if running in captive portal mode
     if [[ ${CAPTIVE_PORTAL_ENABLED} == true ]]; then
         /etc/init.d/S35wifi stop &>/dev/null
-        panic_inhibit
+        panic inhibit
     fi
 
     run_conf=/var/run/hostapd.conf

@@ -1,13 +1,5 @@
 #!/bin/bash
 
-source /etc/init.d/panic
+source /sbin/panic
 
-
-function reset_panic() {
-    # remove last panic details file
-    rm -f ${PANIC_DETAILS_FILE}
-    # reset panic counter 
-    echo 0 > ${PANIC_COUNTER_FILE}
-}
-
-sleep ${PANIC_REBOOT_DELAY_MAX} && reset_panic &
+sleep ${PANIC_REBOOT_DELAY_MAX} && reset &

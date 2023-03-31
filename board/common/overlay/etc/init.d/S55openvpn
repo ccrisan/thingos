@@ -40,7 +40,7 @@ watch() {
                 count=$((${count} + 1))
                 continue
             else
-                panic_action openvpn "service dead"
+                panic action openvpn "service dead"
                 break
             fi
         fi

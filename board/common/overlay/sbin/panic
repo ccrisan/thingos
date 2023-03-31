@@ -1,3 +1,4 @@
+#!/bin/bash
 
 PANIC_COUNTER_FILE="/var/lib/panic_counter"
 PANIC_REBOOT_DELAY_FACTOR=10
@@ -5,11 +6,20 @@ PANIC_REBOOT_DELAY_MAX=3600  # reboot at least once an hour in case of panic
 PANIC_INHIBIT_FILE="/var/run/panic_inhibit"
 PANIC_INHIBIT_TIMEOUT=3600  # inhibit panic action for at most one hour
 PANIC_DETAILS_FILE="/var/lib/last_panic"
+PANIC_DETAILS_CACHE_FILE="/var/run/panic"
 
 test -n "${OS_DEBUG}" || source /etc/init.d/os_conf
 
+function usage() {
+    echo "$0 <command> [params...]"
+    echo "Available commands:"
+    echo "    action <service/component> [message]"
+    echo "    details"
+    echo "    inhibit"
+    echo "    reset"
+}
 
-panic_is_inhibited() {
+function is_inhibited() {
     if [[ -s ${PANIC_INHIBIT_FILE} ]]; then
         uptime=$(cat /proc/uptime | grep -oE '^[[:digit:]]+')
         inhibit_uptime=$(cat ${PANIC_INHIBIT_FILE})
@@ -22,7 +32,7 @@ panic_is_inhibited() {
     return 1
 }
 
-panic_action() {
+function action() {
     # $1 - service/component
     # $2 - optional error message
     
@@ -45,8 +55,9 @@ panic_action() {
         echo "timestamp=\"$(date +%s)\""
         echo "uptime=\"$(cat /proc/uptime | grep -oE '^[[:digit:]]+')\""
     ) > ${PANIC_DETAILS_FILE}
+    cp ${PANIC_DETAILS_FILE} ${PANIC_DETAILS_CACHE_FILE}
     
-    if panic_is_inhibited; then
+    if is_inhibited; then
         logger -t panic -s "action inhibited (caused by $1)"
         return 1
     fi
@@ -61,7 +72,7 @@ panic_action() {
         sleep ${delay}
     fi
 
-    if panic_is_inhibited; then
+    if is_inhibited; then
         logger -t panic -s "action inhibited (caused by $1)"
         return 1
     fi
@@ -69,3 +80,64 @@ panic_action() {
     logger -t panic -s "rebooting (caused by $1)"
     /sbin/reboot
 }
+
+function details() {
+    if ! [[ -s ${PANIC_DETAILS_FILE} ]]; then
+        echo "No recent panic"
+        exit
+    fi
+
+    source ${PANIC_DETAILS_FILE}
+
+    {
+        echo "Service:|${service}"
+        echo "Message:|${message}"
+        echo "Date:|$(date -D%s -d ${timestamp})"
+        echo "Uptime:|${uptime} seconds"
+        echo "Current:|$(test -s ${PANIC_DETAILS_CACHE_FILE} && echo yes || echo no)"
+        echo "Inhibited:|$(is_inhibited && echo yes || echo no)"
+        echo "Counter:|$(cat ${PANIC_COUNTER_FILE} 2>/dev/null || echo 0)"
+    } | column -t -s '|'
+}
+
+function inhibit() {
+    cat /proc/uptime | grep -oE '^[[:digit:]]+' > ${PANIC_INHIBIT_FILE}
+}
+
+function reset() {
+    # Remove panic details files
+    rm -f ${PANIC_DETAILS_FILE}
+    rm -f ${PANIC_DETAILS_CACHE_FILE}
+
+    # Reset panic counter 
+    echo 0 > ${PANIC_COUNTER_FILE}
+}
+
+# Allow this script to be sourced
+test "$0" == /sbin/panic || return 0
+
+test -n "$1" || { usage; exit 1; }
+
+case $1 in
+    action)
+        test -n "$2" || { usage; exit 1; }
+        action "${@:2}"
+        ;;
+
+    details)
+        details "${@:2}"
+        ;;
+    
+    inhibit)
+        inhibit "${@:2}"
+        ;;
+    
+    reset)
+        reset "${@:2}"
+        ;;
+    
+    *)
+        usage
+        exit 1
+        ;;
+esac

@@ -42,7 +42,7 @@ watch() {
                 count=$((${count} + 5))
                 logger -t ppp "disconnected"
             else
-                panic_action ppp "disconnected for ${LINK_WATCH_TIMEOUT} seconds"
+                panic action ppp "disconnected for ${LINK_WATCH_TIMEOUT} seconds"
             fi
         fi
     done

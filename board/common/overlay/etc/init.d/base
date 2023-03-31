@@ -5,8 +5,6 @@ BOARD_NAME=$(cat /etc/board)
 
 test -n "${OS_DEBUG}" || source /etc/init.d/os_conf
 
-source /etc/init.d/panic
-
 msg() {
     echo " * $1"
 }
