@@ -715,7 +715,8 @@ case "$1" in
 
     list)
         if [[ -z ${OS_FIRMWARE_VERSIONS_STABLE} || -z {OS_FIRMWARE_VERSIONS_BETA} ]]; then
-            exit_usage
+            echo "No firmware version list available"
+            exit 2
         fi
 
         list_versions "$2"
