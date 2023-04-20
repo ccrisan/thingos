@@ -8,10 +8,8 @@ function exit_usage() {
     echo "           shows the current version"
     echo "       fwupdate latest"
     echo "           shows the latest available version with details"
-if [[ -n ${OS_FIRMWARE_VERSIONS_STABLE} && -n {OS_FIRMWARE_VERSIONS_BETA} ]]; then
     echo "       fwupdate list [<stable|beta|all>]"
     echo "           list available firmware versions"
-fi
     echo "       fwupdate download <version|latest|url|file>"
     echo "           downloads a specific firmware OS image"
     echo "       fwupdate extract"
@@ -40,6 +38,10 @@ fi
 
     exit 1
 }
+
+if [[ -z "$1" ]]; then
+    exit_usage
+fi
 
 #### Configuration ####
 
@@ -92,10 +94,6 @@ ROOT_LOOP="/dev/loop4"
 boot_mounted_rw=false
 
 source /etc/init.d/base
-
-if [[ -z "$1" ]]; then
-    exit_usage
-fi
 
 #### Utils ####
 
@@ -277,7 +275,7 @@ function show_latest() {
 
 function list_versions() {
     check_versions=${1,,}
-    if [[ -z $check_versions ]]; then
+    if [[ -z ${check_versions} ]]; then
         if [[ ${OS_PRERELEASES} == true ]]; then
             check_versions="all"
         else
@@ -286,20 +284,20 @@ function list_versions() {
     fi
 
     versions_stable="[]"
-    if [[ $check_versions == "stable" || $check_versions == "all" ]]; then
+    if [[ ${check_versions} == "stable" || ${check_versions} == "all" ]]; then
       # get stable versions
       url=$(expand_placeholders ${OS_FIRMWARE_VERSIONS_STABLE})
       versions_stable=$(curl --fail -sSL ${url})
     fi
 
     versions_beta="[]"
-    if [[ $check_versions == "beta" || $check_versions == "all" ]]; then
+    if [[ ${check_versions} == "beta" || ${check_versions} == "all" ]]; then
       # get beta versions
       url=$(expand_placeholders ${OS_FIRMWARE_VERSIONS_BETA})
       versions_beta=$(curl --fail -sSL ${url})
     fi
 
-    versions_all=$(echo -e "$versions_stable\n$versions_beta" | jq -s 'add')
+    versions_all=$(echo -e "${versions_stable}\n${versions_beta}" | jq -s 'add')
 
     jq -r '.[] | [ .version, .date, .url ] | @tsv' <<< ${versions_all} | semver-sort -k 1 -t $'\t' -r
 }
