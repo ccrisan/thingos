@@ -8,6 +8,8 @@ function exit_usage() {
     echo "           shows the current version"
     echo "       fwupdate latest"
     echo "           shows the latest available version with details"
+    echo "       fwupdate list [<stable|beta|all>]"
+    echo "           list available firmware versions"
     echo "       fwupdate download <version|latest|url|file>"
     echo "           downloads a specific firmware OS image"
     echo "       fwupdate extract"
@@ -40,7 +42,6 @@ function exit_usage() {
 if [[ -z "$1" ]]; then
     exit_usage
 fi
-
 
 #### Configuration ####
 
@@ -93,7 +94,6 @@ ROOT_LOOP="/dev/loop4"
 boot_mounted_rw=false
 
 source /etc/init.d/base
-
 
 #### Utils ####
 
@@ -268,6 +268,38 @@ function show_latest() {
     fi
 
     echo "${version}  ${url}  ${date}"
+}
+
+
+#### Show all versions ####
+
+function list_versions() {
+    check_versions=${1,,}
+    if [[ -z ${check_versions} ]]; then
+        if [[ ${OS_PRERELEASES} == true ]]; then
+            check_versions="all"
+        else
+            check_versions="stable"
+        fi
+    fi
+
+    versions_stable="[]"
+    if [[ ${check_versions} == "stable" || ${check_versions} == "all" ]]; then
+      # get stable versions
+      url=$(expand_placeholders ${OS_FIRMWARE_VERSIONS_STABLE})
+      versions_stable=$(curl --fail -sSL ${url})
+    fi
+
+    versions_beta="[]"
+    if [[ ${check_versions} == "beta" || ${check_versions} == "all" ]]; then
+      # get beta versions
+      url=$(expand_placeholders ${OS_FIRMWARE_VERSIONS_BETA})
+      versions_beta=$(curl --fail -sSL ${url})
+    fi
+
+    versions_all=$(echo -e "${versions_stable}\n${versions_beta}" | jq -s 'add')
+
+    jq -r '.[] | [ .version, .date, .url ] | @tsv' <<< ${versions_all} | semver-sort -k 1 -t $'\t' -r
 }
 
 
@@ -679,6 +711,15 @@ case "$1" in
 
     latest)
         show_latest
+        ;;
+
+    list)
+        if [[ -z ${OS_FIRMWARE_VERSIONS_STABLE} || -z {OS_FIRMWARE_VERSIONS_BETA} ]]; then
+            echo "No firmware version list available"
+            exit 2
+        fi
+
+        list_versions "$2"
         ;;
 
     download)
