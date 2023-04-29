@@ -6,5 +6,5 @@ dtparam=spi=on
 dtparam=audio=on
 force_eeprom_read=0
 disable_poe_fan=1
-boot_delay=5
+boot_delay=2
 arm_64bit=1
