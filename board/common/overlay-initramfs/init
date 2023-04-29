@@ -65,7 +65,7 @@ cleanup_on_exit() {
 
 trap cleanup_on_exit EXIT
 
-if [ -x /prepare_initramfs ]; then
+if [[ -x /prepare_initramfs ]]; then
     msg "Preparing initramfs"
     /prepare_initramfs
 fi
@@ -75,6 +75,12 @@ mount ${BOOT_DEV} /boot
 
 msg "Mounting data partition"
 mount ${DATA_DEV} /data
+
+if [[ -x ${FW_DIR}/exec_initramfs ]]; then
+    export FW_DIR DISK_DEV BOOT_DEV ROOT_DEV DATA_DEV
+    msg "Executing initramfs script"
+    ${FW_DIR}/exec_initramfs || exit 1
+fi
 
 if ! [[ -r ${FW_FILE_EXTR} ]]; then
     msg "No firmware found, aborting"
