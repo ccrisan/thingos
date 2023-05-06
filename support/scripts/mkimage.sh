@@ -154,8 +154,8 @@ loop_dev=$(losetup --show ${LOOP_DEV} ${DISK_IMG})
 
 msg "partitioning disk"
 set +e
-PART_TABLE_TYPE=${PART_TABLE_TYPE:-dos}
-if [[ ${PART_TABLE_TYPE} == dos ]]; then
+PART_TABLE_TYPE=${PART_TABLE_TYPE:-mbr}
+if [[ ${PART_TABLE_TYPE} == mbr ]] || [[ ${PART_TABLE_TYPE} == dos ]]; then
     fdisk -u=sectors ${loop_dev} <<END
 o
 n
