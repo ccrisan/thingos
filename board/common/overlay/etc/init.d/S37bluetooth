@@ -10,6 +10,7 @@ ADAPTER_PATH="/sys/class/bluetooth/${ADAPTER}"
 ADAPTER_TIMEOUT=10
 PROG="/usr/libexec/bluetooth/bluetoothd"
 PROG_CTL="/usr/bin/bluetoothctl"
+PROG_BDADDR="/usr/libexec/bdaddr"
 DATA_DIR="/var/lib/bluetooth"
 RUN_DATA_DIR="/data/bluetooth"
 NO_ON_BOARD_BT="/tmp/.no_on_board_bt"  # used by RPi to explicitly indicate that no on-board BT was detected
@@ -31,6 +32,33 @@ function configure() {
     # if no specific name configured, use hostname
     if ! grep -E 'Name\s*=' ${RUN_CONF} &>/dev/null; then   
         sed -ri "s/(\[General\])/\1\nName = $(hostname)/" ${RUN_CONF}
+    fi
+}
+
+function ensure_addr() {
+    # Some adapters may come with configured address AA:AA:AA:AA:AA:AA.
+    # We use the serial number and ETH MAC address to build a BT address.
+    if [[ -x ${PROG_BDADDR} ]] && grep -qiE 'AA:AA:AA:AA:AA:AA' /sys/class/bluetooth/${ADAPTER}/address; then
+        serial_number=$(cat /proc/device-tree/serial-number | cut -c9-)
+        b1=$(echo ${serial_number} | cut -c3-4)
+        b2=$(echo ${serial_number} | cut -c5-6)
+        b3=$(echo ${serial_number} | cut -c7-8)
+        vendor_part=$(cat /sys/class/net/${OS_ETH}/address | cut -c1-8)
+        addr=$(printf "${vendor_part}:%02x:%02x:%02x" $((0x${b3} ^ 0xAA)) $((0x${b2} ^ 0xAA)) $((0x${b1} ^ 0xAA)))
+        
+        # Temporarily start `bluetoothd` so we can use `bdaddr`.
+        ${PROG} &>/dev/null &
+        sleep 1       
+        
+        # Actually set address using `bdaddr`.
+        ${PROG_BDADDR} -r -i ${ADAPTER} ${addr} >/dev/null
+        
+        # `bluetoothd` needs to be restarted a couple of times.
+        killall -q $(basename ${PROG})
+        sleep 1
+        ${PROG} &>/dev/null &
+        sleep 1
+        killall -q $(basename ${PROG})
     fi
 }
 
@@ -80,6 +108,8 @@ function start() {
     fi
     
     rfkill unblock bluetooth &>/dev/null
+    
+    ensure_addr
     
     msg_begin "Starting bluetoothd"
     ${PROG} &>/dev/null &

@@ -26,11 +26,9 @@ fi
 
 BOARD_DIR=$(dirname $0)
 
-rkdeveloptool=$(which rkdeveloptool 2>/dev/null)
-if [[ -z "${rkdeveloptool}" ]]; then
-    msg "make sure you have rkdeveloptool installed"
-    exit 1
-fi
+rkbin=${BOARD_DIR}/../../output/rockpi4b/images/rkbin
+rkdeveloptool=${rkbin}/tools/rkdeveloptool
+flash_boot_loader=${BOARD_DIR}/flash-boot-loader.bin
 
 while getopts "a:d:f:h:i:lm:n:o:p:s:w" o; do
     case "${o}" in
@@ -78,9 +76,8 @@ if ! ${rkdeveloptool} ld 2>&1 | grep -iq maskrom; then
     exit 1
 fi
 
-FLASH_BOOT_LOADER=${BOARD_DIR}/flash-boot-loader.bin
 msg "downloading flash bootloader"
-${rkdeveloptool} db "${FLASH_BOOT_LOADER}"
+${rkdeveloptool} db "${flash_boot_loader}"
 
 msg "writing OS image to flash"
 ${rkdeveloptool} wl 0 "${DISK_IMG}"
