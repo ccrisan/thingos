@@ -36,7 +36,7 @@ function watch_eth() {
     count=0
     while true; do
         sleep 5
-        if [[ "$(cat /sys/class/net/${OS_ETH}/operstate 2>/dev/null)" == "up" ]]; then
+        if [[ "$(cat /sys/class/net/${OS_ETH}/carrier 2>/dev/null)" == 1 ]]; then
             count=0
         else
             if [[ ${count} -lt ${LINK_WATCH_TIMEOUT} ]]; then
@@ -89,7 +89,7 @@ function start_wlan() {
         return 1
     fi
 
-    if [[ "$(cat /sys/class/net/${!iface_var}/carrier 2>/dev/null)" != "1" ]]; then
+    if [[ "$(cat /sys/class/net/${!iface_var}/carrier 2>/dev/null)" != 1 ]]; then
         msg_fail "no link"
         return 1
     fi
@@ -138,22 +138,10 @@ function start_eth() {
     # bring it up
     ifconfig ${OS_ETH} up
 
-    # wait for operstate
-    w=3
-    count=0
-    while [[ "$(cat /sys/class/net/${OS_ETH}/operstate 2>&1)" == "unknown" ]]; do
-        sleep 1
-        count=$((${count} + 1))
-        if [[ ${count} -ge ${w} ]]; then
-            msg_done "no link"
-            return 1
-        fi
-    done
-
     # wait for link
     test "${LINK_WATCH}" == "true" || LINK_NEGO_TIMEOUT=5
     count=0
-    while [[ "$(cat /sys/class/net/${OS_ETH}/carrier 2>&1)" != "1" ]]; do
+    while [[ "$(cat /sys/class/net/${OS_ETH}/carrier 2>&1)" != 1 ]]; do
         sleep 1
         count=$((${count} + 1))
         if [[ ${count} -ge ${LINK_NEGO_TIMEOUT} ]]; then
