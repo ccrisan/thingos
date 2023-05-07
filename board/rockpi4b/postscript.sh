@@ -40,7 +40,7 @@ cp ${BUILD_DIR}/bluez5_utils-*/tools/bdaddr ${TARGET}/usr/libexec
 # Boot partition files
 mkdir -p ${BOOT_DIR}/overlays
 cp ${BINARIES_DIR}/rockpi-4b-linux.dtb ${BOOT_DIR}
-cp ${BUILD_DIR}/linux-custom/arch/arm64/boot/dts/rockchip/overlays-rockpi4/*.dtbo ${BOOT_DIR}/overlays
+cp ${BUILD_DIR}/linux-custom/arch/arm64/boot/dts/rockchip/overlay/*.dtbo ${BOOT_DIR}/overlays
 cp ${BINARIES_DIR}/boot.scr ${BOOT_DIR}
 cp ${BINARIES_DIR}/Image ${BOOT_DIR}
 cp ${BOARD_DIR}/initrd.gz ${BOOT_DIR}
