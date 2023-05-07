@@ -32,6 +32,7 @@ ${RKBIN_DIR}/tools/trust_merger ${BINARIES_DIR}/RK3399TRUST.ini
 
 # Wi-Fi firmware needs to be at `/system/etc/firmware` for some reason
 mkdir -p ${TARGET_DIR}/system/etc
+rm -f ${TARGET_DIR}/system/etc/firmware
 ln -sf /lib/firmware ${TARGET_DIR}/system/etc/firmware
 
 # Needed to set Bluetooth address
