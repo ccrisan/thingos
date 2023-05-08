@@ -3,12 +3,12 @@
 RKBIN_DIR=${BINARIES_DIR}/rkbin
 
 # First stage boot loader
-mkimage="${BUILD_DIR}/uboot-2021.10/tools/mkimage"
+mkimage="${BUILD_DIR}/uboot-custom/tools/mkimage"
 ${mkimage} -n rk3399 -T rksd -d ${RKBIN_DIR}/bin/rk33/rk3399_ddr_800MHz_v1.27.bin ${BINARIES_DIR}/idbloader.img
 cat ${RKBIN_DIR}/bin/rk33/rk3399_miniloader_v1.26.bin >> ${BINARIES_DIR}/idbloader.img
 
 # U-boot
-${RKBIN_DIR}/tools/loaderimage --pack --uboot ${BINARIES_DIR}/u-boot.bin ${BINARIES_DIR}/uboot.img 0x200000 --size 1024 1
+${RKBIN_DIR}/tools/loaderimage --pack --uboot ${BINARIES_DIR}/u-boot-dtb.bin ${BINARIES_DIR}/uboot.img 0x200000 --size 1024 1
 
 # Trust image
 cat >${BINARIES_DIR}/RK3399TRUST.ini <<EOF
@@ -44,5 +44,7 @@ cp ${BINARIES_DIR}/rk3399-rock-pi-4b.dtb ${BOOT_DIR}
 cp ${BUILD_DIR}/linux-custom/arch/arm64/boot/dts/rockchip/overlay/*.dtbo ${BOOT_DIR}/overlays
 cp ${BINARIES_DIR}/boot.scr ${BOOT_DIR}
 cp ${BINARIES_DIR}/Image ${BOOT_DIR}
+cp ${BOARD_DIR}/extlinux.conf ${BOOT_DIR}
+cp ${BOARD_DIR}/hw_intfc.conf ${BOOT_DIR}
 cp ${BOARD_DIR}/initrd.gz ${BOOT_DIR}
 cp ${BOARD_DIR}/uEnv.txt ${BOOT_DIR}
