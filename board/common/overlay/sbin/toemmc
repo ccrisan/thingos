@@ -51,6 +51,8 @@ dd if=${DISK_DEV} of=${emmc_dev} bs=10M count=${total_size} status=none
 sync
 partx -a ${emmc_dev} &>/dev/null
 
+sleep 1
+
 msg "Removing data partition from EMMC"
 fdisk >/dev/null ${emmc_dev} <<END
 d

@@ -27,8 +27,8 @@ for overlay_file in ${overlays}; do
     fi
 done
 
-echo "Initrd size is ${initrd_size}"
 if test -n "${initrd}"; then
+    echo "Initrd size is ${initrd_size}"
     booti ${kernel_addr_r} ${ramdisk_addr_r}:${initrd_size} ${fdt_addr_r}
 else
     booti ${kernel_addr_r} - ${fdt_addr_r}

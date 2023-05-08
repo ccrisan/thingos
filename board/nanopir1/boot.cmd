@@ -2,6 +2,8 @@ setenv load_addr "0x44000000"
 setenv rootfstype "ext4"
 setenv devnum 0
 
+echo "Boot script loaded from ${devtype} ${devnum}"
+
 if mmc dev 1; then
     setenv rootdev "/dev/mmcblk1p2"
     echo "Booting from SD card"
@@ -10,22 +12,24 @@ else
     echo "Booting from eMMC"
 fi
 
-load mmc ${devnum} ${load_addr} uEnv.txt
-env import -t ${load_addr} ${filesize}
+if test -e ${devtype} ${devnum} uEnv.txt; then
+    load ${devtype} ${devnum} ${load_addr} uEnv.txt
+    env import -t ${load_addr} ${filesize}
+fi
 
 setenv bootargs "root=${rootdev} rootfstype=${rootfstype} ${cmdline}"
 if test -n "${initrd}"; then
     setenv bootargs "${bootargs} initrd=${initrd}"
-    load mmc ${devnum} ${ramdisk_addr_r} ${initrd}
+    load ${devtype} ${devnum} ${ramdisk_addr_r} ${initrd}
     setenv initrd_size ${filesize}
 fi
 
-load mmc ${devnum} ${kernel_addr_r} ${kernel}
-load mmc ${devnum} ${fdt_addr_r} ${fdt}
+load ${devtype} ${devnum} ${kernel_addr_r} ${kernel}
+load ${devtype} ${devnum} ${fdt_addr_r} ${fdt}
 fdt addr ${fdt_addr_r}
 fdt resize 65536
 for overlay_file in ${overlays}; do
-    if load mmc ${devnum} ${load_addr} overlays/${overlay_file}.dtbo; then
+    if load ${devtype} ${devnum} ${load_addr} overlays/${overlay_file}.dtbo; then
         echo "Applying kernel provided DT overlay ${overlay_file}.dtbo"
         fdt apply ${load_addr}
     fi
