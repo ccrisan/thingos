@@ -1,0 +1,7 @@
+#!/bin/bash
+
+sleep $((RANDOM % 86400))
+source /etc/init.d/os_conf
+test "${OS_FIRMWARE_AUTO_UPDATE}" == true || exit 0
+test "${OS_DEBUG}" == true && { echo "Skipping automatic fwupdate in debug mode"; exit 0; }
+/sbin/fwupdate install latest
