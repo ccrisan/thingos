@@ -2,7 +2,7 @@
 
 SYS_CONF=/etc/docker-compose.yml
 BOOT_CONF=/boot/docker-compose.yml
-CONF=/data/etc/docker-compose.yml
+USER_CONF=/data/etc/docker-compose.yml
 
 PROG=/usr/bin/docker-compose
 LOG=/var/log/docker-compose.log
@@ -12,7 +12,7 @@ RUN_DIR=/var/run/docker-compose
 
 test -x ${PROG} || exit 0
 test -n "${OS_VERSION}" || source /etc/init.d/base
-prepare_conf ${CONF} ${SYS_CONF} ${BOOT_CONF}
+CONF=$(select_conf ${SYS_CONF} ${BOOT_CONF} ${USER_CONF})
 test -s ${CONF} || exit 0
 
 
@@ -36,7 +36,8 @@ function start() {
 
     mkdir -p ${RUN_DIR}
     export COMPOSE_HTTP_TIMEOUT=300
-    ${PROG} -p ${PROJ} --project-directory ${RUN_DIR} -f ${CONF} up --no-start &>${LOG}
+    ${PROG} -p ${PROJ} --project-directory ${RUN_DIR} -f ${CONF} pull &>${LOG}
+    ${PROG} -p ${PROJ} --project-directory ${RUN_DIR} -f ${CONF} up --no-start &>>${LOG}
     ${PROG} -p ${PROJ} --project-directory ${RUN_DIR} -f ${CONF} up -d &>>${LOG}
     test $? == 0 && msg_done || msg_fail
 }
