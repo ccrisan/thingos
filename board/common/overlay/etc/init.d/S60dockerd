@@ -10,7 +10,8 @@ test -n "${OS_VERSION}" || source /etc/init.d/base
 
 function start() {
     msg_begin "Starting docker engine"
-    mkdir -p /var/lib/docker
+    mkdir -p /data/docker
+    ln -sf /data/docker /var/lib/docker
     mkdir -p /var/run/docker
     test -f /var/lib/docker/daemon.json || echo '{}' > /var/lib/docker/daemon.json
     modprobe fuse &>/dev/null
