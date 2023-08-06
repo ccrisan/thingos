@@ -26,7 +26,7 @@ function mount_overlay() {
         mp=${parts[1]}
         type=${parts[2]}
         opts=${parts[3]}
-        /bin/mount -t ${type} -o ${opts} ${fs} ${mp}
+        /bin/mount -t ${type} -o ${opts},index=off,metacopy=off ${fs} ${mp}
     done
     test $? == 0 && msg_done || msg_fail
 }
