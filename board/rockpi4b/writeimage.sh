@@ -71,13 +71,16 @@ elif [[ ${DISK_IMG} == *.xz ]]; then
     DISK_IMG=${DISK_IMG%???}
 fi
 
-if ! ${rkdeveloptool} ld 2>&1 | grep -iq maskrom; then
-    msg "make sure your device is connected and in maskrom mode"
+if ${rkdeveloptool} ld 2>&1 | grep -iq maskrom; then
+    msg "device in maskrom mode detected"
+    msg "downloading flash bootloader"
+    ${rkdeveloptool} db "${flash_boot_loader}"
+elif ${rkdeveloptool} ld 2>&1 | grep -iq loader; then
+    msg "device in loader mode detected"
+else
+    msg "make sure your device is connected and in maskrom or loader mode"
     exit 1
 fi
-
-msg "downloading flash bootloader"
-${rkdeveloptool} db "${flash_boot_loader}"
 
 msg "writing OS image to flash"
 ${rkdeveloptool} wl 0 "${DISK_IMG}"
