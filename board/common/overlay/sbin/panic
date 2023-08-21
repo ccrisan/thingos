@@ -92,8 +92,8 @@ function details() {
     {
         echo "Service:|${service}"
         echo "Message:|${message}"
-        echo "Date:|$(date -D%s -d ${timestamp})"
-        echo "Uptime:|${uptime} seconds"
+        echo "Date:|$(date -D%s -d ${timestamp:-0})"
+        echo "Uptime:|${uptime:-0} seconds"
         echo "Current:|$(test -s ${PANIC_DETAILS_CACHE_FILE} && echo yes || echo no)"
         echo "Inhibited:|$(is_inhibited && echo yes || echo no)"
         echo "Counter:|$(cat ${PANIC_COUNTER_FILE} 2>/dev/null || echo 0)"
