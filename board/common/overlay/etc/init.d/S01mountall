@@ -26,7 +26,11 @@ function mount_overlay() {
         mp=${parts[1]}
         type=${parts[2]}
         opts=${parts[3]}
-        /bin/mount -t ${type} -o ${opts},index=off,metacopy=off ${fs} ${mp}
+        # Add index/metacopy options are only available after kernel 4.19
+        if echo -e "$(uname -r)\n4.19.0" | semver-sort | head -n 1 | grep -q 4.19.0; then
+            opts+=",index=off,metacopy=off"
+        fi
+        /bin/mount -t ${type} -o ${opts} ${fs} ${mp}
     done
     test $? == 0 && msg_done || msg_fail
 }
