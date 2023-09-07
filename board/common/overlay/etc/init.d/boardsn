@@ -1,4 +1,5 @@
 #!/bin/bash
 
 __sn=$(cat /proc/cpuinfo | grep Serial | tr -d ' ' | cut -d ':' -f 2)
+test -n "${__sn}" || __sn=$(cat /sys/class/net/eth0/address | tr -d ':')
 echo ${__sn: -8}
