@@ -83,7 +83,7 @@ function watch_adapter() {
 function start() {
     msg_begin "Configuring bluetooth"
 
-    # adapter explicitly makred as unavailable from previous boot steps
+    # adapter explicitly marked as unavailable from previous boot steps
     if [[ -f "${NO_ON_BOARD_BT}" ]]; then
         msg_fail "no adapter"
         return 1
@@ -133,6 +133,9 @@ function start() {
         ${PROG_CTL} discoverable on >/dev/null
     fi
     
+    # some adapters must be explicitly powered on
+    ${PROG_CTL} power on >/dev/null
+
     watch_adapter &
 }
 
