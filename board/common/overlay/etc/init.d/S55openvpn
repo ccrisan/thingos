@@ -14,15 +14,17 @@ test -x ${PROG} || exit 0
 
 test -n "${OS_VERSION}" || source /etc/init.d/base
 
-prepare_conf ${CONF} ${SYS_CONF} ${BOOT_CONF}
-
 source ${NETWATCH_CONF}
 
-test -d ${CONF} || exit 0
+CLIENT_CONF=$(select_conf ${CONF}/client.conf ${BOOT_CONF}/client.conf ${SYS_CONF}/client.conf)
+
+test -n ${CLIENT_CONF} || exit 0
+
+CONF=$(dirname ${CLIENT_CONF})
 
 
 running() {
-    killall -0 openvpn &> /dev/null
+    (killall -0 openvpn && ip link show tun0) &> /dev/null
 }
 
 watch() {
@@ -49,8 +51,9 @@ watch() {
 
 start() {
     msg_begin "Starting openvpn"
-    modprobe tun
+    modprobe tun &>/dev/null
 
+    test -x ${CONF}/prepare-conf.sh && ${CONF}/prepare-conf.sh ${CONF}
     ${PROG} --config ${CONF}/client.conf --cd ${CONF} &>>/var/log/openvpn.log &
     test $? == 0 && msg_done || msg_fail
     
