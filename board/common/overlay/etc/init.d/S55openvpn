@@ -18,7 +18,7 @@ source ${NETWATCH_CONF}
 
 CLIENT_CONF=$(select_conf ${CONF}/client.conf ${BOOT_CONF}/client.conf ${SYS_CONF}/client.conf)
 
-test -n ${CLIENT_CONF} || exit 0
+test -n "${CLIENT_CONF}" || exit 0
 
 CONF=$(dirname ${CLIENT_CONF})
 
