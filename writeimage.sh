@@ -6,8 +6,9 @@ function usage() {
 Usage: $0 [options...]
 
 Available options:
-    <-i image_file> - indicates the path to the image file (e.g. -i /home/user/Download/file.img.gz)
+    <-i image_file> - indicates the path to the image file (e.g. -i /home/user/Download/file.img.xz)
     <-d sdcard_dev> - indicates the path to the sdcard block device (e.g. -d /dev/mmcblk0)
+    [-f factory_defaults] - injects factory defaults (e.g. -f /home/user/Download/factory-defaults.tar.xz)
     [-m modem:apn:user:pwd:pin] - configures the mobile network modem (e.g. -m ttyUSB0:internet)
     [-n ssid:psk] - sets the wireless network name and key (e.g. -n mynet:mykey1234)
     [-s ip/cidr:gw:dns] - sets a static IP configuration instead of DHCP (e.g. -s 192.168.1.101/24:192.168.1.1:8.8.8.8)
@@ -32,6 +33,9 @@ while getopts "a:d:f:h:i:lm:n:o:p:s:w" o; do
             ;;
         i)
             DISK_IMG=$OPTARG
+            ;;
+        f)
+            FACTORY_DEFAULTS=$OPTARG
             ;;
         m)
             IFS=":" SETTINGS=($OPTARG)
@@ -123,6 +127,12 @@ else # assuming Linux
         BOOT_DEV=${SDCARD_DEV}1 # e.g. /dev/sdc1
     fi
     mount "$BOOT_DEV" "$BOOT"
+fi
+
+# factory defaults
+if [ -n "$FACTORY_DEFAULTS" ]; then
+    msg "injecting factory defaults"
+    cp $FACTORY_DEFAULTS $BOOT/factory-defaults.tar.xz
 fi
 
 # wifi
