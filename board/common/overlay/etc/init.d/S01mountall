@@ -47,7 +47,7 @@ function mount_cgroupfs() {
 function install_factory_defaults() {
     if [[ -s /boot/factory-defaults.tar.xz ]]; then
         msg_begin "Installing factory defaults"
-        tar --no-same-owner -mxf /boot/factory-defaults.tar.xz -C /data
+        xzcat /boot/factory-defaults.tar.xz  | tar --no-same-owner -mx -C /data
         sync
         msg_done
     fi
