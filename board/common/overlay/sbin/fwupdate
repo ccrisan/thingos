@@ -24,6 +24,8 @@ function exit_usage() {
     echo "           performs all the operations necessary for installing a certain firmware version"
     echo "       fwupdate auto [on|off]"
     echo "           controls the automatic firmware update mechanism"
+    echo "       fwupdate prereleases [on|off]"
+    echo "           enables or disables prereleases (beta) channel"
     echo ""
     echo "Statuses:"
     echo "       idle"
@@ -680,7 +682,7 @@ function show_auto() {
 
 function set_auto() {
     if [[ -s /data/etc/os.conf ]]; then
-        cat /data/etc/os.conf | grep -v OS_FIRMWARE_AUTO_UPDATE > /data/etc/os.conf.new
+        cat /data/etc/os.conf | grep -v OS_FIRMWARE_AUTO_UPDATE > /data/etc/os.conf.new || true
         mv /data/etc/os.conf.new /data/etc/os.conf
     fi
 
@@ -698,6 +700,40 @@ function do_auto() {
         set_auto false
         source /etc/init.d/os_conf
         show_auto
+    fi
+}
+
+
+#### Prereleases ####
+
+function show_prereleases() {
+    if [[ ${OS_PRERELEASES} == true ]]; then
+        echo on
+    else
+        echo off
+    fi
+}
+
+function set_prereleases() {
+    if [[ -s /data/etc/os.conf ]]; then
+        cat /data/etc/os.conf | grep -v OS_PRERELEASES > /data/etc/os.conf.new || true
+        mv /data/etc/os.conf.new /data/etc/os.conf
+    fi
+
+    echo "OS_PRERELEASES=$1" >> /data/etc/os.conf
+}
+
+function do_prereleases() {
+    if [[ -z "$1" ]]; then
+        show_prereleases
+    elif [[ "$1" == on ]]; then
+        set_prereleases true
+        source /etc/init.d/os_conf
+        show_prereleases
+    elif [[ "$1" == off ]]; then
+        set_prereleases false
+        source /etc/init.d/os_conf
+        show_prereleases
     fi
 }
 
@@ -759,6 +795,10 @@ case "$1" in
 
     auto)
         do_auto ${@:2}
+        ;;
+
+    prereleases)
+        do_prereleases ${@:2}
         ;;
 
     *)
