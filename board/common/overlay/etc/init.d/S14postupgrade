@@ -18,7 +18,24 @@ test "${hash}" == "${sys_hash}" && exit 0
 test -d ${POST_UPGRADE_DIR} || exit 0
 
 function version_gt() {
-    if [[ "$1" != "$2" ]] && [[ $(echo -e "$2\n$1" | semver-sort | head -n 1) == "$2" ]]; then
+    # Tells if version in $1 > version in $2.
+
+    v1=$1
+    v2=$2
+
+    # Trim trailing version components so that both versions are of same length.
+    IFS=. v1=(${v1}); unset IFS
+    IFS=. v2=(${v2}); unset IFS
+    while [[ ${#v1[@]} -gt ${#v2[@]} ]]; do
+        unset v1[-1]
+    done
+    while [[ ${#v2[@]} -gt ${#v1[@]} ]]; do
+        unset v2[-1]
+    done
+    v1=$(echo ${v1[@]} | tr ' ' '.')
+    v2=$(echo ${v2[@]} | tr ' ' '.')
+
+    if [[ "${v1}" != "${v2}" ]] && [[ $(echo -e "${v1}\n${v2}" | semver-sort | head -n 1) == "${v2}" ]]; then
         return 0
     else
         return 1
