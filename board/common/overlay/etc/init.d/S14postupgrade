@@ -36,7 +36,7 @@ function version_gt() {
     v1=$(echo ${v1[@]} | tr ' ' '.')
     v2=$(echo ${v2[@]} | tr ' ' '.')
 
-    if [[ "${v1}" != "${v2}" ]] && [[ $(echo -e "${v1}\n${v2}" | semver-sort | head -n 1) == "${v2}" ]]; then
+    if [[ "${v1}" != "${v2}" ]] && [[ $(echo -e "${v1}\n${v2}" | semver-sort 2>/dev/null | head -n 1) == "${v2}" ]]; then
         return 0
     else
         return 1
@@ -54,7 +54,13 @@ function run_post_upgrade() {
     
     versions=$(ls -1 ${POST_UPGRADE_DIR} | rev | cut -d '.' -f 2-100 | rev)
     for v in ${versions}; do
-        if [[ ${v} == "post-upgrade" ]]; then
+        # Skip post-upgrade* scripts as they are treated separately.
+        if [[ ${v} == post-upgrade* ]]; then
+            continue
+        fi
+
+        # Don't run scripts for previous (or current) versions.
+        if [[ -n "${version}" ]] && ! version_gt ${v} ${version}; then
             continue
         fi
 
@@ -68,11 +74,9 @@ function run_post_upgrade() {
             continue
         fi
     
-        if [[ -z "${version}" ]] || version_gt ${v} ${version}; then
-            msg_begin "Post-upgrading to version ${v}"
-            ${POST_UPGRADE_DIR}/${v}.sh >> ${LOG} 2>&1
-            test $? == 0 && msg_done || msg_fail
-        fi
+        msg_begin "Running post-upgrade script for version ${v}"
+        ${POST_UPGRADE_DIR}/${v}.sh >> ${LOG} 2>&1
+        test $? == 0 && msg_done || msg_fail
     done
     
     if [[ -x "${POST_UPGRADE_DIR}/post-upgrade.sh" ]]; then

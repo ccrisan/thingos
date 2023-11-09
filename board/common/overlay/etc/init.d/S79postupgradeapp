@@ -1,5 +1,6 @@
 #!/bin/bash
 
+POST_UPGRADE_DIR="/usr/share/post-upgrade"
 POST_UPGRADE_APP_SCHEDULED="/data/.post-upgrade-app-scheduled"
 
 LOG="/var/log/post-upgrade.log"
@@ -7,7 +8,7 @@ LOG="/var/log/post-upgrade.log"
 
 test -n "${OS_VERSION}" || source /etc/init.d/base
 
-test -s ${POST_UPGRADE_APP_SCHEDULED} || exit 0
+test -f ${POST_UPGRADE_APP_SCHEDULED} || exit 0
 
 function run_post_upgrade() {
     for script in $(cat ${POST_UPGRADE_APP_SCHEDULED}); do
@@ -15,6 +16,12 @@ function run_post_upgrade() {
         ${script} >> ${LOG} 2>&1
         test $? == 0 && msg_done || msg_fail
     done
+
+    if [[ -x "${POST_UPGRADE_DIR}/post-upgrade-app.sh" ]]; then
+        msg_begin "Running common post-upgrade-app script"
+        ${POST_UPGRADE_DIR}/post-upgrade-app.sh >> ${LOG} 2>&1
+        test $? == 0 && msg_done || msg_fail
+    fi
 }
 
 case "$1" in
