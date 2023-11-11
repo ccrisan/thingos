@@ -7,11 +7,15 @@ USER_CONF="/data/etc/watchdog.conf"
 PROG="/sbin/watchdog"
 DEVICE="/dev/watchdog"
 TIMEOUT=5
+
 THERMAL_ZONE=
 MAX_TEMP=
-CHECK_TEMP_INTERVAL=10
+TEMP_INTERVAL=10
 
-test -x ${PROG} || exit 0
+SYS_CHECK="/usr/libexec/watchdog-check"
+USER_CHECK="/data/etc/watchdog-check"
+CHECK_LOG="/var/log/watchdog-check.log"
+CHECK_INTERVAL=10
 
 test -s ${SYS_CONF} && source ${SYS_CONF}
 test -s ${USER_CONF} && source ${USER_CONF}
@@ -20,12 +24,21 @@ test -s ${BOOT_CONF} && source ${BOOT_CONF}
 test -n "${OS_VERSION}" || source /etc/init.d/base
 
 
-start_watchtemp() {
+function start_watchdog() {
+    if ! [[ -x ${PROG} && -e ${DEVICE} ]]; then
+        return
+    fi
+    msg_begin "Starting watchdog"
+    ${PROG} -t ${TIMEOUT} ${DEVICE}
+    test $? == 0 && msg_done || msg_fail
+}
+
+function start_watch_temp() {
     if [[ -z "${THERMAL_ZONE}" ]] || [[ -z "${MAX_TEMP}" ]]; then
         return
     fi
     while true; do
-        sleep ${CHECK_TEMP_INTERVAL}
+        sleep ${TEMP_INTERVAL}
         temp=$(cat /sys/class/thermal/${THERMAL_ZONE}/temp)
         temp=$((temp / 1000))
         if [[ "${temp}" -gt ${MAX_TEMP} ]]; then
@@ -34,28 +47,34 @@ start_watchtemp() {
     done
 }
 
-stop_watchtemp() {
-    ps | grep S13network | grep -v $$ | grep -v grep | tr -s ' ' | sed -e 's/^\s//' | cut -d ' ' -f 1 | xargs -r kill
-    ps | grep "service watchdog" | grep -v $$ | grep -v grep | tr -s ' ' | sed -e 's/^\s//' | cut -d ' ' -f 1 | xargs -r kill
+function start_watch_check() {
+    if ! [[ -x "${SYS_CHECK}" ]] && ! [[ -x "${USER_CHECK}" ]]; then
+        return
+    fi
+    while true; do
+        sleep ${CHECK_INTERVAL}
+        if [[ -x "${SYS_CHECK}" ]] && ! "${SYS_CHECK}" &>>${CHECK_LOG}; then
+            panic action watchdog "system check failed"
+        elif [[ -x "${USER_CHECK}" ]] && ! "${USER_CHECK}" &>>${CHECK_LOG}; then
+            panic action watchdog "user check failed"
+        fi
+    done
 }
 
-start_watchdog() {
-    msg_begin "Starting watchdog"
-    ${PROG} -t ${TIMEOUT} ${DEVICE}
-    test $? == 0 && msg_done || msg_fail
-}
-
-stop_watchdog() {
+function stop() {
     msg_begin "Stopping watchdog"
     killall -q $(basename ${PROG})
-    test $? == 0 && msg_done || msg_fail
+    ps | grep "service watchdog" | grep -v $$ | grep -v grep | tr -s ' ' | sed -e 's/^\s//' | cut -d ' ' -f 1 | xargs -r kill
+    ps | grep "S13watchdog" | grep -v $$ | grep -v grep | tr -s ' ' | sed -e 's/^\s//' | cut -d ' ' -f 1 | xargs -r kill
+    msg_done
 }
 
 
 case "$1" in
     start)
         start_watchdog
-        start_watchtemp &
+        start_watch_temp &
+        start_watch_check &
         ;;
 
     stop)
@@ -63,8 +82,7 @@ case "$1" in
         ;;
 
     reallystop)
-        stop_watchdog
-        stop_watchtemp
+        stop
         ;;
 
     *)
