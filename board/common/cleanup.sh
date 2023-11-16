@@ -190,6 +190,7 @@ rm -rf ${TARGET}/usr/lib/python*/site-packages/samba/
 rm -rf ${TARGET}/usr/lib/python*/unittest/
 
 # buildroot default startup scripts
+rm -f ${TARGET}/etc/init.d/S01seedrng
 rm -f ${TARGET}/etc/init.d/S01syslogd
 rm -f ${TARGET}/etc/init.d/S02sysctl
 rm -f ${TARGET}/etc/init.d/S10udev
