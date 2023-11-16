@@ -8,3 +8,4 @@ cp ${BUILD_DIR}/linux-custom/arch/arm/boot/dts/overlays/*.dtbo ${BOOT_DIR}/overl
 cp ${BINARIES_DIR}/zImage ${BOOT_DIR}
 cp ${BOARD_DIR}/initrd.gz ${BOOT_DIR}
 cp ${BOARD_DIR}/uEnv.txt ${BOOT_DIR}
+cp ${BINARIES_DIR}/sun8i-h3-nanopi-r1.dtb ${BOOT_DIR}
