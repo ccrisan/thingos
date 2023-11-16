@@ -4,8 +4,9 @@
 #
 ################################################################################
 
-CMAKE_VERSION_MAJOR = 3.16
-CMAKE_VERSION = $(CMAKE_VERSION_MAJOR).9
+# When updating the version, please also update BR2_HOST_CMAKE_AT_LEAST_X_Y
+CMAKE_VERSION_MAJOR = 3.27
+CMAKE_VERSION = $(CMAKE_VERSION_MAJOR).1
 CMAKE_SITE = https://cmake.org/files/v$(CMAKE_VERSION_MAJOR)
 CMAKE_LICENSE = BSD-3-Clause
 CMAKE_LICENSE_FILES = Copyright.txt
@@ -32,6 +33,7 @@ CMAKE_CONF_OPTS = \
 	-DKWSYS_CHAR_IS_SIGNED=TRUE \
 	-DCMAKE_USE_SYSTEM_LIBRARIES=1 \
 	-DCTEST_USE_XMLRPC=OFF \
+	-DCMake_ENABLE_DEBUGGER=0 \
 	-DBUILD_CursesDialog=OFF
 
 # Get rid of -I* options from $(HOST_CPPFLAGS) to prevent that a
@@ -40,9 +42,16 @@ CMAKE_CONF_OPTS = \
 HOST_CMAKE_CFLAGS = $(shell echo $(HOST_CFLAGS) | sed -r "s%$(HOST_CPPFLAGS)%%")
 HOST_CMAKE_CXXFLAGS = $(shell echo $(HOST_CXXFLAGS) | sed -r "s%$(HOST_CPPFLAGS)%%")
 
+# We may be a ccache dependency, so we can't use ccache
+HOST_CMAKE_CONFIGURE_OPTS = \
+	$(HOST_CONFIGURE_OPTS) \
+	CC="$(HOSTCC_NOCCACHE)" \
+	GCC="$(HOSTCC_NOCCACHE)" \
+	CXX="$(HOSTCXX_NOCCACHE)"
+
 define HOST_CMAKE_CONFIGURE_CMDS
 	(cd $(@D); \
-		$(HOST_CONFIGURE_OPTS) \
+		$(HOST_CMAKE_CONFIGURE_OPTS) \
 		CFLAGS="$(HOST_CMAKE_CFLAGS)" \
 		./bootstrap --prefix=$(HOST_DIR) \
 			--parallel=$(PARALLEL_JOBS) -- \

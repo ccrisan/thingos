@@ -12,12 +12,11 @@ OPKG_UTILS_LICENSE_FILES = COPYING
 
 HOST_OPKG_UTILS_DEPENDENCIES = \
 	$(BR2_PYTHON3_HOST_DEPENDENCY) \
-	host-diffutils \
 	host-lz4 \
 	host-xz
 
 # Nothing to build; only scripts to install.
-define OPKG_UTILS_INSTALL_CMDS
+define OPKG_UTILS_INSTALL_TARGET_CMDS
 	$(MAKE) -C $(@D) PREFIX=$(TARGET_DIR) install-utils
 endef
 

@@ -4,7 +4,8 @@
 #
 ################################################################################
 
-GHOSTSCRIPT_VERSION = 9.53.3
+GHOSTSCRIPT_VERSION = 10.02.0
+GHOSTSCRIPT_SOURCE = ghostscript-$(GHOSTSCRIPT_VERSION).tar.xz
 GHOSTSCRIPT_SITE = https://github.com/ArtifexSoftware/ghostpdl-downloads/releases/download/gs$(subst .,,$(GHOSTSCRIPT_VERSION))
 GHOSTSCRIPT_LICENSE = AGPL-3.0
 GHOSTSCRIPT_LICENSE_FILES = LICENSE
@@ -20,9 +21,6 @@ GHOSTSCRIPT_DEPENDENCIES = \
 	lcms2 \
 	libpng \
 	tiff
-
-# 0002-Bug-704342-Include-device-specifier-strings-in-acces.patch
-GHOSTSCRIPT_IGNORE_CVES += CVE-2021-3781
 
 # Ghostscript includes (old) copies of several libraries, delete them.
 # Inspired by linuxfromscratch:
@@ -69,6 +67,15 @@ else
 GHOSTSCRIPT_CONF_OPTS += --disable-openjpeg
 endif
 
+ifeq ($(BR2_PACKAGE_OPENJPEG)$(BR2_PACKAGE_JBIG2DEC),yy)
+# Dependencies already handle on per-package basis above,
+# but duplicated here for consistency.
+GHOSTSCRIPT_DEPENDENCIES += openjpeg jbig2dec
+GHOSTSCRIPT_CONF_OPTS += --with-pdf
+else
+GHOSTSCRIPT_CONF_OPTS += --without-pdf
+endif
+
 ifeq ($(BR2_PACKAGE_CUPS),y)
 GHOSTSCRIPT_DEPENDENCIES += cups
 GHOSTSCRIPT_CONF_OPTS += \
@@ -83,6 +90,10 @@ GHOSTSCRIPT_DEPENDENCIES += xlib_libX11
 GHOSTSCRIPT_CONF_OPTS += --with-x
 else
 GHOSTSCRIPT_CONF_OPTS += --without-x
+endif
+
+ifeq ($(BR2_TOOLCHAIN_HAS_THREADS),)
+GHOSTSCRIPT_CONF_OPTS += --without-tesseract
 endif
 
 $(eval $(autotools-package))

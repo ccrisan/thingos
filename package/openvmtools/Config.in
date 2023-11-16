@@ -1,6 +1,12 @@
+config BR2_PACKAGE_OPENVMTOOLS_ARCH_SUPPORTS
+	bool
+	default y if BR2_i386
+	default y if BR2_x86_64
+	default y if BR2_aarch64
+
 config BR2_PACKAGE_OPENVMTOOLS
 	bool "openvmtools"
-	depends on BR2_i386 || BR2_x86_64
+	depends on BR2_PACKAGE_OPENVMTOOLS_ARCH_SUPPORTS
 	depends on BR2_USE_MMU # libglib2
 	depends on BR2_USE_WCHAR # libglib2
 	depends on BR2_TOOLCHAIN_HAS_THREADS # libglib2
@@ -12,7 +18,7 @@ config BR2_PACKAGE_OPENVMTOOLS
 	help
 	  Open Virtual Machine Tools for VMware guest OS
 
-	  http://open-vm-tools.sourceforge.net/
+	  https://github.com/vmware/open-vm-tools
 
 	  ICU locales, Xerces, and X11 tools are currently not
 	  supported.
@@ -26,13 +32,14 @@ config BR2_PACKAGE_OPENVMTOOLS_PAM
 	bool "PAM support"
 	# linux-pam needs locale and wchar, but we already have this
 	# dependency on the main symbol, above.
+	depends on BR2_TOOLCHAIN_GCC_AT_LEAST_4_9 # linux-pam
 	depends on !BR2_STATIC_LIBS
 	select BR2_PACKAGE_LINUX_PAM
 	help
 	  Support for PAM in openvmtools
 
-comment "PAM support needs a toolchain w/ dynamic library"
-	depends on BR2_STATIC_LIBS
+comment "PAM support needs a toolchain w/ dynamic library, gcc >= 4.9"
+	depends on BR2_STATIC_LIBS || !BR2_TOOLCHAIN_GCC_AT_LEAST_4_9
 
 config BR2_PACKAGE_OPENVMTOOLS_RESOLUTIONKMS
 	bool "resolutionkms support"
@@ -51,7 +58,7 @@ comment "resolutionkms needs udev, a toolchain w/ threads"
 endif
 
 comment "openvmtools needs a glibc or musl toolchain w/ wchar, threads, locale"
-	depends on BR2_i386 || BR2_x86_64
+	depends on BR2_PACKAGE_OPENVMTOOLS_ARCH_SUPPORTS
 	depends on BR2_USE_MMU
 	depends on !BR2_USE_WCHAR || !BR2_TOOLCHAIN_HAS_THREADS || \
 		!BR2_ENABLE_LOCALE || \

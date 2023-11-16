@@ -8,6 +8,7 @@ config BR2_PACKAGE_QEMU_ARCH_SUPPORTS_TARGET
 	default y if BR2_mipsel
 	default y if BR2_powerpc64
 	default y if BR2_powerpc64le
+	default y if BR2_riscv
 	default y if BR2_x86_64
 
 comment "QEMU requires a toolchain with wchar, threads, gcc >= 8"
@@ -25,7 +26,6 @@ menuconfig BR2_PACKAGE_QEMU
 	depends on BR2_USE_MMU # fork()
 	select BR2_PACKAGE_LIBGLIB2
 	select BR2_PACKAGE_ZLIB
-	select BR2_PACKAGE_QEMU_SYSTEM if !BR2_PACKAGE_QEMU_LINUX_USER
 	help
 	  QEMU is a generic and open source machine emulator and
 	  virtualizer.
@@ -42,7 +42,7 @@ menuconfig BR2_PACKAGE_QEMU
 	  Linux. When using KVM, QEMU can virtualize x86, server and
 	  embedded PowerPC, and S390 guests.
 
-	  http://qemu.org/
+	  https://www.qemu.org/
 
 if BR2_PACKAGE_QEMU
 
@@ -52,6 +52,7 @@ config BR2_PACKAGE_QEMU_SYSTEM
 	bool "Enable systems emulation"
 	depends on !BR2_STATIC_LIBS # dtc
 	select BR2_PACKAGE_PIXMAN
+	select BR2_PACKAGE_QEMU_FDT if !BR2_PACKAGE_QEMU_CHOOSE_TARGETS
 	help
 	  Say 'y' to build system emulators/virtualisers.
 
@@ -124,6 +125,7 @@ comment "Linux user-land emulation needs a glibc or uClibc toolchain"
 
 config BR2_PACKAGE_QEMU_CHOOSE_TARGETS
 	bool "Select individual emulator targets"
+	depends on BR2_PACKAGE_QEMU_SYSTEM || BR2_PACKAGE_QEMU_LINUX_USER
 	help
 	  By default, all targets (system and/or user, subject to the
 	  corresponding options, above) are built. If you only need a
@@ -355,5 +357,12 @@ config BR2_PACKAGE_QEMU_TOOLS
 	help
 	  Say 'y' here to include tools packaged with QEMU
 	  (e.g. qemu-img).
+
+config BR2_PACKAGE_QEMU_GUEST_AGENT
+	bool "Enable guest agent"
+	help
+	  Say 'y' here to include an agent to run on guests, which
+	  communicates with the host over a virtio-serial channel
+	  named "org.qemu.guest_agent.0".
 
 endif # BR2_PACKAGE_QEMU

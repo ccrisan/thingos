@@ -14,40 +14,25 @@ GDB_SOURCE = gdb-$(GDB_VERSION).tar.gz
 GDB_FROM_GIT = y
 endif
 
-ifeq ($(BR2_csky),y)
-GDB_SITE = $(call github,c-sky,binutils-gdb,$(GDB_VERSION))
-GDB_SOURCE = gdb-$(GDB_VERSION).tar.gz
-GDB_FROM_GIT = y
-endif
-
 GDB_LICENSE = GPL-2.0+, LGPL-2.0+, GPL-3.0+, LGPL-3.0+
 GDB_LICENSE_FILES = COPYING COPYING.LIB COPYING3 COPYING3.LIB
 GDB_CPE_ID_VENDOR = gnu
 
-# On gdb < 10, if you want to build only gdbserver, you need to
-# configure only gdb/gdbserver.
-ifeq ($(BR2_PACKAGE_GDB_DEBUGGER)$(BR2_PACKAGE_GDB_TOPLEVEL),)
-GDB_SUBDIR = gdb/gdbserver
-
-# When we want to build the full gdb, or for very recent versions of
-# gdb with gdbserver at the top-level, out of tree build is mandatory,
-# so we create a 'build' subdirectory in the gdb sources, and build
-# from there.
-else
+# Out of tree build is mandatory, so we create a 'build' subdirectory
+# in the gdb sources, and build from there.
 GDB_SUBDIR = build
 define GDB_CONFIGURE_SYMLINK
 	mkdir -p $(@D)/$(GDB_SUBDIR)
 	ln -sf ../configure $(@D)/$(GDB_SUBDIR)/configure
 endef
 GDB_PRE_CONFIGURE_HOOKS += GDB_CONFIGURE_SYMLINK
-endif
 
 # For the host variant, we really want to build with XML support,
 # which is needed to read XML descriptions of target architectures. We
 # also need ncurses.
 # As for libiberty, gdb may use a system-installed one if present, so
 # we must ensure ours is installed first.
-HOST_GDB_DEPENDENCIES = host-expat host-libiberty host-ncurses
+HOST_GDB_DEPENDENCIES = host-expat host-libiberty host-ncurses host-zlib
 
 # Disable building documentation
 GDB_MAKE_OPTS += MAKEINFO=true
@@ -71,18 +56,10 @@ GDB_DEPENDENCIES += host-flex host-bison
 HOST_GDB_DEPENDENCIES += host-flex host-bison
 endif
 
-# When BR2_GDB_VERSION_11=y, we're going to build gdb 11.x for the
-# host (if enabled), so we add the necessary gmp dependency.
-ifeq ($(BR2_GDB_VERSION_11),y)
+# All newer versions of GDB need host-gmp, so it's only for older
+# versions that the dependency can be avoided.
+ifeq ($(BR2_GDB_VERSION_10)$(BR2_arc),)
 HOST_GDB_DEPENDENCIES += host-gmp
-endif
-
-# When BR2_GDB_VERSION_11=y (because it's enabled for the host) and
-# we're building the full gdb for the target, we need gmp as a
-# dependency. For now the default gdb version in Buildroot doesn't
-# require gmp.
-ifeq ($(BR2_GDB_VERSION_11)$(BR2_PACKAGE_GDB_DEBUGGER),yy)
-GDB_DEPENDENCIES += gmp
 endif
 
 # When gdb sources are fetched from the binutils-gdb repository, they
@@ -155,18 +132,36 @@ GDB_CONF_OPTS = \
 	--without-included-gettext \
 	--disable-werror \
 	--enable-static \
-	--without-mpfr
+	--without-mpfr \
+	--disable-source-highlight
 
 ifeq ($(BR2_PACKAGE_GDB_DEBUGGER),y)
+GDB_DEPENDENCIES += zlib
 GDB_CONF_OPTS += \
 	--enable-gdb \
-	--with-curses
+	--with-curses \
+	--with-system-zlib
 GDB_DEPENDENCIES += ncurses \
 	$(if $(BR2_PACKAGE_LIBICONV),libiconv)
 else
+# When only building gdbserver, we don't need zlib. But we have no way to
+# tell the top-level configure that we don't need zlib: it either wants to
+# build the bundled one, or use the system one.
+# Since we're going to only install the gdbserver to the target, we don't
+# care that the bundled zlib is built, as it is not used.
 GDB_CONF_OPTS += \
 	--disable-gdb \
-	--without-curses
+	--without-curses \
+	--without-system-zlib
+endif
+
+# Starting from GDB 11.x, gmp is needed as a dependency to build full
+# gdb. So we avoid the dependency only for GDB 10.x and the special
+# version used on ARC.
+ifeq ($(BR2_GDB_VERSION_10)$(BR2_arc):$(BR2_PACKAGE_GDB_DEBUGGER),:y)
+GDB_CONF_OPTS += \
+	--with-libgmp-prefix=$(STAGING_DIR)/usr
+GDB_DEPENDENCIES += gmp
 endif
 
 ifeq ($(BR2_PACKAGE_GDB_SERVER),y)
@@ -201,17 +196,10 @@ GDB_CONF_OPTS += --disable-tui
 endif
 
 ifeq ($(BR2_PACKAGE_GDB_PYTHON),y)
-ifeq ($(BR2_PACKAGE_PYTHON3),y)
 # CONF_ENV: for top-level configure; MAKE_ENV: for sub-projects' configure.
 GDB_CONF_ENV += BR_PYTHON_VERSION=$(PYTHON3_VERSION_MAJOR)
 GDB_MAKE_ENV += BR_PYTHON_VERSION=$(PYTHON3_VERSION_MAJOR)
 GDB_DEPENDENCIES += python3
-else
-# CONF_ENV: for top-level configure; MAKE_ENV: for sub-projects' configure.
-GDB_CONF_ENV += BR_PYTHON_VERSION=$(PYTHON_VERSION_MAJOR)
-GDB_MAKE_ENV += BR_PYTHON_VERSION=$(PYTHON_VERSION_MAJOR)
-GDB_DEPENDENCIES += python
-endif
 GDB_CONF_OPTS += --with-python=$(TOPDIR)/package/gdb/gdb-python-config
 else
 GDB_CONF_OPTS += --without-python
@@ -231,13 +219,6 @@ GDB_CONF_OPTS += --with-liblzma-prefix=$(STAGING_DIR)/usr
 GDB_DEPENDENCIES += xz
 else
 GDB_CONF_OPTS += --without-lzma
-endif
-
-ifeq ($(BR2_PACKAGE_ZLIB),y)
-GDB_CONF_OPTS += --with-zlib
-GDB_DEPENDENCIES += zlib
-else
-GDB_CONF_OPTS += --without-zlib
 endif
 
 ifeq ($(BR2_PACKAGE_GDB_PYTHON),)
@@ -277,8 +258,10 @@ HOST_GDB_CONF_OPTS = \
 	--enable-threads \
 	--disable-werror \
 	--without-included-gettext \
+	--with-system-zlib \
 	--with-curses \
 	--without-mpfr \
+	--disable-source-highlight \
 	$(GDB_DISABLE_BINUTILS_CONF_OPTS)
 
 ifeq ($(BR2_PACKAGE_HOST_GDB_TUI),y)
@@ -287,10 +270,7 @@ else
 HOST_GDB_CONF_OPTS += --disable-tui
 endif
 
-ifeq ($(BR2_PACKAGE_HOST_GDB_PYTHON),y)
-HOST_GDB_CONF_OPTS += --with-python=$(HOST_DIR)/bin/python2
-HOST_GDB_DEPENDENCIES += host-python
-else ifeq ($(BR2_PACKAGE_HOST_GDB_PYTHON3),y)
+ifeq ($(BR2_PACKAGE_HOST_GDB_PYTHON3),y)
 HOST_GDB_CONF_OPTS += --with-python=$(HOST_DIR)/bin/python3
 HOST_GDB_DEPENDENCIES += host-python3
 else

@@ -4,11 +4,11 @@
 #
 ################################################################################
 
-PYTHON_APISPEC_VERSION = 1.3.3
+PYTHON_APISPEC_VERSION = 6.3.0
 PYTHON_APISPEC_SOURCE = apispec-$(PYTHON_APISPEC_VERSION).tar.gz
-PYTHON_APISPEC_SITE = https://files.pythonhosted.org/packages/99/9e/c2af08f8ddbfbba13d48d26db58b905734bfc1f42d38471551769aa59726
+PYTHON_APISPEC_SITE = https://files.pythonhosted.org/packages/3f/1e/207c3e61c805eef214d7e5c58106312f9af4733b07f470224e4e309dc65e
 PYTHON_APISPEC_SETUP_TYPE = setuptools
-PYTHON_APISPEC_LICENSE = Apache-2.0
-PYTHON_APISPEC_LICENSE_FILES = LICENSE.txt
+PYTHON_APISPEC_LICENSE = MIT
+PYTHON_APISPEC_LICENSE_FILES = LICENSE
 
 $(eval $(python-package))

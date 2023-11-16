@@ -4,24 +4,25 @@
 #
 ################################################################################
 
-PPPD_VERSION = 2.4.8
+PPPD_VERSION = 2.4.9
 PPPD_SITE = $(call github,paulusmack,ppp,ppp-$(PPPD_VERSION))
 PPPD_LICENSE = LGPL-2.0+, LGPL, BSD-4-Clause, BSD-3-Clause, GPL-2.0+
 PPPD_LICENSE_FILES = \
 	pppd/tdb.c pppd/plugins/pppoatm/COPYING \
 	pppdump/bsd-comp.c pppd/ccp.c pppd/plugins/passprompt.c
-PPPD_CPE_ID_VENDOR = samba
-PPPD_CPE_ID_PRODUCT = ppp
+PPPD_CPE_ID_VENDOR = point-to-point_protocol_project
+PPPD_CPE_ID_PRODUCT = point-to-point_protocol
 PPPD_SELINUX_MODULES = ppp
 
-# 0001-pppd-Fix-bounds-check.patch
-PPPD_IGNORE_CVES += CVE-2020-8597
-
 PPPD_MAKE_OPTS = HAVE_INET6=y
-ifeq ($(BR2_TOOLCHAIN_USES_GLIBC),y)
+
+ifeq ($(BR2_PACKAGE_OPENSSL),y)
 PPPD_DEPENDENCIES += openssl
+PPPD_MAKE_OPTS += USE_EAPTLS=y
 else
-PPPD_MAKE_OPTS += USE_CRYPT=y
+PPPD_MAKE_OPTS += \
+	USE_CRYPT=y \
+	USE_EAPTLS=
 endif
 
 PPPD_INSTALL_STAGING = YES
@@ -36,15 +37,6 @@ PPPD_DEPENDENCIES += libpcap
 PPPD_MAKE_OPTS += FILTER=y
 endif
 
-# pppd bundles some but not all of the needed kernel headers. The embedded
-# if_pppol2tp.h is unfortunately not compatible with kernel headers > 2.6.34,
-# and has been part of the kernel headers since 2.6.23, so drop it
-define PPPD_DROP_INTERNAL_IF_PPOL2TP_H
-	$(RM) $(@D)/include/linux/if_pppol2tp.h
-endef
-
-PPPD_POST_EXTRACT_HOOKS += PPPD_DROP_INTERNAL_IF_PPOL2TP_H
-
 # pppd defaults to /etc/ppp/resolv.conf, which not be writable and is
 # definitely not useful since the C library only uses
 # /etc/resolv.conf. Therefore, we change pppd to use /etc/resolv.conf
@@ -54,6 +46,13 @@ define PPPD_SET_RESOLV_CONF
 endef
 ifeq ($(BR2_PACKAGE_PPPD_OVERWRITE_RESOLV_CONF),y)
 PPPD_POST_EXTRACT_HOOKS += PPPD_SET_RESOLV_CONF
+endif
+
+ifeq ($(BR2_TOOLCHAIN_HEADERS_AT_LEAST_5_15),y)
+define PPPD_DROP_IPX
+	$(SED) 's/-DIPX_CHANGE//' $(PPPD_DIR)/pppd/Makefile.linux
+endef
+PPPD_POST_EXTRACT_HOOKS += PPPD_DROP_IPX
 endif
 
 define PPPD_CONFIGURE_CMDS
@@ -101,9 +100,9 @@ define PPPD_INSTALL_TARGET_CMDS
 		$(TARGET_DIR)/usr/lib/pppd/$(PPPD_VERSION)/passwordfd.so
 	$(INSTALL) -D $(PPPD_DIR)/pppd/plugins/pppoatm/pppoatm.so \
 		$(TARGET_DIR)/usr/lib/pppd/$(PPPD_VERSION)/pppoatm.so
-	$(INSTALL) -D $(PPPD_DIR)/pppd/plugins/rp-pppoe/rp-pppoe.so \
-		$(TARGET_DIR)/usr/lib/pppd/$(PPPD_VERSION)/rp-pppoe.so
-	$(INSTALL) -D $(PPPD_DIR)/pppd/plugins/rp-pppoe/pppoe-discovery \
+	$(INSTALL) -D $(PPPD_DIR)/pppd/plugins/pppoe/pppoe.so \
+		$(TARGET_DIR)/usr/lib/pppd/$(PPPD_VERSION)/pppoe.so
+	$(INSTALL) -D $(PPPD_DIR)/pppd/plugins/pppoe/pppoe-discovery \
 		$(TARGET_DIR)/usr/sbin/pppoe-discovery
 	$(INSTALL) -D $(PPPD_DIR)/pppd/plugins/winbind.so \
 		$(TARGET_DIR)/usr/lib/pppd/$(PPPD_VERSION)/winbind.so

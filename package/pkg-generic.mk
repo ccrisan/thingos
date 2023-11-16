@@ -90,21 +90,14 @@ endif
 #######################################
 # Helper functions
 
-# Make sure .la files only reference the current per-package
-# directory.
-
-# $1: package name (lower case)
-# $2: staging directory of the package
 ifeq ($(BR2_PER_PACKAGE_DIRECTORIES),y)
-define fixup-libtool-files
-	$(Q)find $(2) \( -path '$(2)/lib*' -o -path '$(2)/usr/lib*' \) \
-		-name "*.la" -print0 | xargs -0 --no-run-if-empty \
-		$(SED) "s:$(PER_PACKAGE_DIR)/[^/]\+/:$(PER_PACKAGE_DIR)/$(1)/:g"
-endef
-endif
 
-# Make sure python _sysconfigdata*.py files only reference the current
-# per-package directory.
+define PPD_FIXUP_PATHS
+	$(call ppd-fixup-paths,$(PER_PACKAGE_DIR)/$($(PKG)_NAME))
+endef
+
+# Remove python's pre-compiled "sysconfigdata", as it may contain paths to
+# the original staging or host dirs.
 #
 # Can't use $(foreach d, $(HOST_DIR)/lib/python* $(STAGING_DIR)/usr/lib/python*, ...)
 # because those directories may be created in the same recipe this macro will
@@ -113,19 +106,15 @@ endif
 # fail.
 # So we just use HOST_DIR as a starting point, and filter on the two directories
 # of interest.
-ifeq ($(BR2_PER_PACKAGE_DIRECTORIES),y)
-define FIXUP_PYTHON_SYSCONFIGDATA
+define PPD_PYTHON_REMOVE_SYSCONFIGDATA_PYC
 	$(Q)find $(HOST_DIR) \
 		\(    -path '$(HOST_DIR)/lib/python*' \
 		   -o -path '$(STAGING_DIR)/usr/lib/python*' \
 		\) \
-		\(    \( -name "_sysconfigdata*.pyc" -delete \) \
-		   -o \( -name "_sysconfigdata*.py" -print0 \) \
-		\) \
-	| xargs -0 --no-run-if-empty \
-		$(SED) 's:$(PER_PACKAGE_DIR)/[^/]\+/:$(PER_PACKAGE_DIR)/$($(PKG)_NAME)/:g'
+		\( -name "_sysconfigdata*.pyc" -delete \)
 endef
-endif
+
+endif  # PPD
 
 # Functions to collect statistics about installed files
 
@@ -193,7 +182,8 @@ $(BUILD_DIR)/%/.stamp_downloaded:
 			break ; \
 		fi ; \
 	done
-	$(foreach p,$($(PKG)_ALL_DOWNLOADS),$(call DOWNLOAD,$(p),$(PKG))$(sep))
+	$(if $($(PKG)_MAIN_DOWNLOAD),$(call DOWNLOAD,$($(PKG)_MAIN_DOWNLOAD),$(PKG),$(patsubst %,-p '%',$($(PKG)_DOWNLOAD_POST_PROCESS))))
+	$(foreach p,$($(PKG)_ADDITIONAL_DOWNLOADS),$(call DOWNLOAD,$(p),$(PKG))$(sep))
 	$(foreach hook,$($(PKG)_POST_DOWNLOAD_HOOKS),$(call $(hook))$(sep))
 	$(Q)mkdir -p $(@D)
 	@$(call step_end,download)
@@ -274,13 +264,11 @@ $(BUILD_DIR)/%/.stamp_configured:
 	@$(call MESSAGE,"Configuring")
 	$(Q)mkdir -p $(HOST_DIR) $(TARGET_DIR) $(STAGING_DIR) $(BINARIES_DIR)
 	$(call prepare-per-package-directory,$($(PKG)_FINAL_DEPENDENCIES))
+	$(foreach hook,$($(PKG)_POST_PREPARE_HOOKS),$(call $(hook))$(sep))
 	@$(call pkg_size_before,$(TARGET_DIR))
 	@$(call pkg_size_before,$(STAGING_DIR),-staging)
 	@$(call pkg_size_before,$(BINARIES_DIR),-images)
 	@$(call pkg_size_before,$(HOST_DIR),-host)
-	$(call fixup-libtool-files,$(NAME),$(HOST_DIR))
-	$(call fixup-libtool-files,$(NAME),$(STAGING_DIR))
-	$(foreach hook,$($(PKG)_POST_PREPARE_HOOKS),$(call $(hook))$(sep))
 	$(foreach hook,$($(PKG)_PRE_CONFIGURE_HOOKS),$(call $(hook))$(sep))
 	$($(PKG)_CONFIGURE_CMDS)
 	$(foreach hook,$($(PKG)_POST_CONFIGURE_HOOKS),$(call $(hook))$(sep))
@@ -521,11 +509,15 @@ else
 endif
 $(2)_VERSION := $$(call sanitize,$$($(2)_DL_VERSION))
 
-$(2)_HASH_FILE = \
+$(2)_HASH_FILES = \
 	$$(strip \
-		$$(if $$(wildcard $$($(2)_PKGDIR)/$$($(2)_VERSION)/$$($(2)_RAWNAME).hash),\
-			$$($(2)_PKGDIR)/$$($(2)_VERSION)/$$($(2)_RAWNAME).hash,\
-			$$($(2)_PKGDIR)/$$($(2)_RAWNAME).hash))
+		$$(foreach d, $$($(2)_PKGDIR) $$(addsuffix /$$($(2)_RAWNAME), $$(call qstrip,$$(BR2_GLOBAL_PATCH_DIR))),\
+			$$(if $$(wildcard $$(d)/$$($(2)_VERSION)/$$($(2)_RAWNAME).hash),\
+				$$(d)/$$($(2)_VERSION)/$$($(2)_RAWNAME).hash,\
+				$$(d)/$$($(2)_RAWNAME).hash\
+			)\
+		)\
+	)
 
 ifdef $(3)_OVERRIDE_SRCDIR
   $(2)_OVERRIDE_SRCDIR ?= $$($(3)_OVERRIDE_SRCDIR)
@@ -540,8 +532,30 @@ $(2)_DIR	=  $$(BUILD_DIR)/$$($(2)_BASENAME)
 ifndef $(2)_SUBDIR
  ifdef $(3)_SUBDIR
   $(2)_SUBDIR = $$($(3)_SUBDIR)
- else
-  $(2)_SUBDIR ?=
+ endif
+endif
+
+ifndef $(2)_DL_SUBDIR
+ ifdef $(3)_DL_SUBDIR
+  $(2)_DL_SUBDIR = $$($(3)_DL_SUBDIR)
+ endif
+endif
+
+ifndef $(2)_DOWNLOAD_DEPENDENCIES
+ ifdef $(3)_DOWNLOAD_DEPENDENCIES
+  $(2)_DOWNLOAD_DEPENDENCIES = $$(filter-out $(1),$$($(3)_DOWNLOAD_DEPENDENCIES))
+ endif
+endif
+
+ifndef $(2)_DL_ENV
+ ifdef $(3)_DL_ENV
+  $(2)_DL_ENV = $$($(3)_DL_ENV)
+ endif
+endif
+
+ifndef $(2)_DOWNLOAD_POST_PROCESS
+ ifdef $(3)_DOWNLOAD_POST_PROCESS
+  $(2)_DOWNLOAD_POST_PROCESS = $$($(3)_DOWNLOAD_POST_PROCESS)
  endif
 endif
 
@@ -582,11 +596,15 @@ ifndef $(2)_PATCH
  endif
 endif
 
-$(2)_ALL_DOWNLOADS = \
-	$$(if $$($(2)_SOURCE),$$($(2)_SITE_METHOD)+$$($(2)_SITE)/$$($(2)_SOURCE)) \
+$(2)_MAIN_DOWNLOAD = \
+	$$(if $$($(2)_SOURCE),$$($(2)_SITE_METHOD)+$$($(2)_SITE)/$$($(2)_SOURCE))
+
+$(2)_ADDITIONAL_DOWNLOADS = \
 	$$(foreach p,$$($(2)_PATCH) $$($(2)_EXTRA_DOWNLOADS),\
 		$$(if $$(findstring ://,$$(p)),$$(p),\
 			$$($(2)_SITE_METHOD)+$$($(2)_SITE)/$$(p)))
+
+$(2)_ALL_DOWNLOADS = $$($(2)_MAIN_DOWNLOAD) $$($(2)_ADDITIONAL_DOWNLOADS)
 
 ifndef $(2)_SITE
  ifdef $(3)_SITE
@@ -768,7 +786,7 @@ $(2)_EXTRACT_DEPENDENCIES += \
 endif
 
 ifeq ($$(BR2_CCACHE),y)
-ifeq ($$(filter host-tar host-skeleton host-xz host-lzip host-fakedate host-ccache,$(1)),)
+ifeq ($$(filter host-tar host-skeleton host-xz host-lzip host-fakedate host-ccache host-cmake host-hiredis host-pkgconf host-zstd,$(1)),)
 $(2)_DEPENDENCIES += host-ccache
 endif
 endif
@@ -838,32 +856,9 @@ $(2)_EXTRACT_CMDS ?= \
 		$$(TAR_OPTIONS) -)
 
 # pre/post-steps hooks
-$(2)_PRE_DOWNLOAD_HOOKS         ?=
-$(2)_POST_DOWNLOAD_HOOKS        ?=
-$(2)_PRE_EXTRACT_HOOKS          ?=
-$(2)_POST_EXTRACT_HOOKS         ?=
-$(2)_PRE_RSYNC_HOOKS            ?=
-$(2)_POST_RSYNC_HOOKS           ?=
-$(2)_PRE_PATCH_HOOKS            ?=
-$(2)_POST_PATCH_HOOKS           ?=
-$(2)_PRE_CONFIGURE_HOOKS        ?=
-$(2)_POST_CONFIGURE_HOOKS       ?=
-$(2)_PRE_BUILD_HOOKS            ?=
-$(2)_POST_BUILD_HOOKS           ?=
-$(2)_PRE_INSTALL_HOOKS          ?=
-$(2)_POST_INSTALL_HOOKS         ?=
-$(2)_PRE_INSTALL_STAGING_HOOKS  ?=
-$(2)_POST_INSTALL_STAGING_HOOKS ?=
-$(2)_PRE_INSTALL_TARGET_HOOKS   ?=
-$(2)_POST_INSTALL_TARGET_HOOKS  ?=
-$(2)_PRE_INSTALL_IMAGES_HOOKS   ?=
-$(2)_POST_INSTALL_IMAGES_HOOKS  ?=
-$(2)_PRE_LEGAL_INFO_HOOKS       ?=
-$(2)_POST_LEGAL_INFO_HOOKS      ?=
-$(2)_TARGET_FINALIZE_HOOKS      ?=
-$(2)_ROOTFS_PRE_CMD_HOOKS       ?=
-
-$(2)_POST_PREPARE_HOOKS += FIXUP_PYTHON_SYSCONFIGDATA
+$(2)_POST_PREPARE_HOOKS += \
+	PPD_FIXUP_PATHS \
+	PPD_PYTHON_REMOVE_SYSCONFIGDATA_PYC
 
 ifeq ($$($(2)_TYPE),target)
 ifneq ($$(HOST_$(2)_KCONFIG_VAR),)
@@ -1056,17 +1051,17 @@ endif
 			rm -f $$($(2)_TARGET_INSTALL_IMAGES)
 			rm -f $$($(2)_TARGET_INSTALL_HOST)
 
-$(1)-reinstall:		$(1)-clean-for-reinstall $(1)
+$(1)-reinstall:		$(1)-clean-for-reinstall .WAIT $(1)
 
 $(1)-clean-for-rebuild: $(1)-clean-for-reinstall
 			rm -f $$($(2)_TARGET_BUILD)
 
-$(1)-rebuild:		$(1)-clean-for-rebuild $(1)
+$(1)-rebuild:		$(1)-clean-for-rebuild .WAIT $(1)
 
 $(1)-clean-for-reconfigure: $(1)-clean-for-rebuild
 			rm -f $$($(2)_TARGET_CONFIGURE)
 
-$(1)-reconfigure:	$(1)-clean-for-reconfigure $(1)
+$(1)-reconfigure:	$(1)-clean-for-reconfigure .WAIT $(1)
 
 # define the PKG variable for all targets, containing the
 # uppercase package variable prefix
@@ -1092,15 +1087,15 @@ $$($(2)_TARGET_DIRCLEAN):		PKG=$(2)
 $$($(2)_TARGET_DIRCLEAN):		NAME=$(1)
 
 # Compute the name of the Kconfig option that correspond to the
-# package being enabled. We handle three cases: the special Linux
-# kernel case, the bootloaders case, and the normal packages case.
-# Virtual packages are handled separately (see below).
+# package being enabled.
 ifeq ($(1),linux)
 $(2)_KCONFIG_VAR = BR2_LINUX_KERNEL
 else ifneq ($$(filter boot/% $$(foreach dir,$$(BR2_EXTERNAL_DIRS),$$(dir)/boot/%),$(pkgdir)),)
 $(2)_KCONFIG_VAR = BR2_TARGET_$(2)
 else ifneq ($$(filter toolchain/% $$(foreach dir,$$(BR2_EXTERNAL_DIRS),$$(dir)/toolchain/%),$(pkgdir)),)
 $(2)_KCONFIG_VAR = BR2_$(2)
+else ifeq ($$($(2)_IS_VIRTUAL),YES)
+$(2)_KCONFIG_VAR = BR2_PACKAGE_HAS_$(2)
 else
 $(2)_KCONFIG_VAR = BR2_PACKAGE_$(2)
 endif
@@ -1141,9 +1136,10 @@ ifneq ($$(call qstrip,$$($(2)_SOURCE)),)
 ifeq ($$(call qstrip,$$($(2)_LICENSE_FILES)),)
 	$(Q)$$(call legal-warning-pkg,$$($(2)_BASENAME_RAW),cannot save license ($(2)_LICENSE_FILES not defined))
 else
-	$(Q)$$(foreach F,$$($(2)_LICENSE_FILES),$$(call legal-license-file,$$($(2)_RAWNAME),$$($(2)_BASENAME_RAW),$$($(2)_HASH_FILE),$$(F),$$($(2)_DIR)/$$(F),$$(call UPPERCASE,$(4)))$$(sep))
+	$(Q)$$(foreach F,$$($(2)_LICENSE_FILES),$$(call legal-license-file,$$(call UPPERCASE,$(4)),$$($(2)_RAWNAME),$$($(2)_BASENAME_RAW),$$(F),$$($(2)_DIR)/$$(F),$$($(2)_HASH_FILES))$$(sep))
 endif # license files
 
+ifeq ($$($(2)_REDISTRIBUTE),YES)
 ifeq ($$($(2)_SITE_METHOD),local)
 # Packages without a tarball: don't save and warn
 	@$$(call legal-warning-nosource,$$($(2)_RAWNAME),local)
@@ -1154,7 +1150,6 @@ else ifneq ($$($(2)_OVERRIDE_SRCDIR),)
 else
 # Other packages
 
-ifeq ($$($(2)_REDISTRIBUTE),YES)
 # Save the source tarball and any extra downloads, but not
 # patches, as they are handled specially afterwards.
 	$$(foreach e,$$($(2)_ACTUAL_SOURCE_TARBALL) $$(notdir $$($(2)_EXTRA_DOWNLOADS)),\
@@ -1168,9 +1163,9 @@ ifeq ($$($(2)_REDISTRIBUTE),YES)
 			$$($(2)_REDIST_SOURCES_DIR) || exit 1; \
 		printf "%s\n" "$$$${f##*/}" >>$$($(2)_REDIST_SOURCES_DIR)/series || exit 1; \
 	done <$$($(2)_DIR)/.applied_patches_list
-endif # redistribute
-
 endif # other packages
+
+endif # redistribute
 	@$$(call legal-manifest,$$(call UPPERCASE,$(4)),$$($(2)_RAWNAME),$$($(2)_VERSION),$$(subst $$(space)$$(comma),$$(comma),$$($(2)_LICENSE)),$$($(2)_MANIFEST_LICENSE_FILES),$$($(2)_ACTUAL_SOURCE_TARBALL),$$($(2)_ACTUAL_SOURCE_SITE),$$(call legal-deps,$(1)))
 endif # ifneq ($$(call qstrip,$$($(2)_SOURCE)),)
 	$$(foreach hook,$$($(2)_POST_LEGAL_INFO_HOOKS),$$(call $$(hook))$$(sep))
@@ -1181,9 +1176,11 @@ ifeq ($$($$($(2)_KCONFIG_VAR)),y)
 
 # Ensure the calling package is the declared provider for all the virtual
 # packages it claims to be an implementation of.
+ifeq ($(BR_BUILDING),y)
 ifneq ($$($(2)_PROVIDES),)
 $$(foreach pkg,$$($(2)_PROVIDES),\
 	$$(eval $$(call virt-provides-single,$$(pkg),$$(call UPPERCASE,$$(pkg)),$(1))$$(sep)))
+endif
 endif
 
 # Register package as a reverse-dependencies of all its dependencies
@@ -1203,8 +1200,8 @@ $(eval $(call check-deprecated-variable,$(2)_INSTALL_HOST_OPT,$(2)_INSTALL_HOST_
 $(eval $(call check-deprecated-variable,$(2)_AUTORECONF_OPT,$(2)_AUTORECONF_OPTS))
 $(eval $(call check-deprecated-variable,$(2)_CONF_OPT,$(2)_CONF_OPTS))
 $(eval $(call check-deprecated-variable,$(2)_BUILD_OPT,$(2)_BUILD_OPTS))
-$(eval $(call check-deprecated-variable,$(2)_GETTEXTIZE_OPT,$(2)_GETTEXTIZE_OPTS))
 $(eval $(call check-deprecated-variable,$(2)_KCONFIG_OPT,$(2)_KCONFIG_OPTS))
+$(eval $(call check-deprecated-variable,$(2)_GETTEXTIZE,$(2)_AUTOPOINT))
 
 PACKAGES += $(1)
 
@@ -1227,13 +1224,19 @@ KEEP_PYTHON_PY_FILES += $$($(2)_KEEP_PY_FILES)
 ifneq ($$($(2)_SELINUX_MODULES),)
 PACKAGES_SELINUX_MODULES += $$($(2)_SELINUX_MODULES)
 endif
+
+ifeq ($(BR2_PACKAGE_REFPOLICY_UPSTREAM_VERSION),y)
 PACKAGES_SELINUX_EXTRA_MODULES_DIRS += \
 	$$(if $$(wildcard $$($(2)_PKGDIR)/selinux),$$($(2)_PKGDIR)/selinux)
+endif
 
 ifeq ($$($(2)_SITE_METHOD),svn)
 DL_TOOLS_DEPENDENCIES += svn
 else ifeq ($$($(2)_SITE_METHOD),git)
 DL_TOOLS_DEPENDENCIES += git
+ifneq ($$($(2)_GIT_LFS),)
+DL_TOOLS_DEPENDENCIES += git-lfs
+endif
 else ifeq ($$($(2)_SITE_METHOD),bzr)
 DL_TOOLS_DEPENDENCIES += bzr
 else ifeq ($$($(2)_SITE_METHOD),scp)
@@ -1243,6 +1246,13 @@ DL_TOOLS_DEPENDENCIES += hg
 else ifeq ($$($(2)_SITE_METHOD),cvs)
 DL_TOOLS_DEPENDENCIES += cvs
 endif # SITE_METHOD
+
+# cargo/go vendoring (may) need git
+ifeq ($$($(2)_DOWNLOAD_POST_PROCESS),cargo)
+DL_TOOLS_DEPENDENCIES += git
+else ifeq ($$($(2)_DOWNLOAD_POST_PROCESS),go)
+DL_TOOLS_DEPENDENCIES += git
+endif
 
 DL_TOOLS_DEPENDENCIES += $$(call extractor-system-dependency,$$($(2)_SOURCE))
 
@@ -1292,22 +1302,6 @@ endif
 ifneq ($$($(2)_HELP_CMDS),)
 HELP_PACKAGES += $(2)
 endif
-
-# Virtual packages are not built but it's useful to allow them to have
-# permission/device/user tables and target-finalize/rootfs-pre-cmd hooks.
-else ifeq ($$(BR2_PACKAGE_HAS_$(2)),y) # $(2)_KCONFIG_VAR
-
-ifneq ($$($(2)_PERMISSIONS),)
-PACKAGES_PERMISSIONS_TABLE += $$($(2)_PERMISSIONS)$$(sep)
-endif
-ifneq ($$($(2)_DEVICES),)
-PACKAGES_DEVICES_TABLE += $$($(2)_DEVICES)$$(sep)
-endif
-ifneq ($$($(2)_USERS),)
-PACKAGES_USERS += $$($(2)_USERS)$$(sep)
-endif
-TARGET_FINALIZE_HOOKS += $$($(2)_TARGET_FINALIZE_HOOKS)
-ROOTFS_PRE_CMD_HOOKS += $$($(2)_ROOTFS_PRE_CMD_HOOKS)
 
 endif # $(2)_KCONFIG_VAR
 endef # inner-generic-package

@@ -246,12 +246,22 @@ config BR2_PACKAGE_GST1_PLUGINS_GOOD_PLUGIN_WAVPARSE
 	help
 	  Parse a .wav file into raw audio
 
+config BR2_PACKAGE_GST1_PLUGINS_GOOD_PLUGIN_XINGMUX
+	bool "xingmux"
+	help
+	  Add XING tags to mpeg audio files
+
 config BR2_PACKAGE_GST1_PLUGINS_GOOD_PLUGIN_Y4M
 	bool "y4m"
 	help
 	  Encodes a YUV frame into the yuv4mpeg format (mjpegtools)
 
 comment "plugins with external dependencies"
+
+config BR2_PACKAGE_GST1_PLUGINS_GOOD_ADAPTIVEMUX2
+	bool "adaptivedemux2 (Adaptive Streaming 2)"
+	select BR2_PACKAGE_LIBXML2
+	select BR2_PACKAGE_LIBSOUP
 
 config BR2_PACKAGE_GST1_PLUGINS_GOOD_PLUGIN_LAME
 	bool "lame (*.mp3 audio encoder)"

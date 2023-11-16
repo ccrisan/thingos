@@ -1,5 +1,5 @@
 # md5, sha256 from https://pypi.org/pypi/certifi/json
-md5  4b38238b7305fcb3ffbc4368be4e8845  certifi-2021.5.30.tar.gz
-sha256  2bbf76fd432960138b3ef6dda3dde0544f27cbf8546c458e60baf371917ba9ee  certifi-2021.5.30.tar.gz
+md5  10a72845d3fc2c38d212b4b7b1872c76  certifi-2023.7.22.tar.gz
+sha256  539cc1d13202e33ca466e88b2807e29f4c13049d6d87031a3c110744495cb082  certifi-2023.7.22.tar.gz
 # Locally computed sha256 checksums
-sha256  be9d82f36112f87a7f1d74ecd4887e1467bbae8878a84004a00117b1e475a3e2  LICENSE
+sha256  a02f6c638f9fb84d06f7764c3ab085d8af7eda5b93c166da54312479077c6fb0  LICENSE

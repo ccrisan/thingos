@@ -22,16 +22,21 @@ KCONFIG_DOT_CONFIG = $(strip \
 
 # KCONFIG_MUNGE_DOT_CONFIG (option, newline [, file])
 define KCONFIG_MUNGE_DOT_CONFIG
-	$(SED) "/\\<$(strip $(1))\\>/d" $(call KCONFIG_DOT_CONFIG,$(3))
+	$(SED) '/^\(# \)\?$(strip $(1))\>/d' $(call KCONFIG_DOT_CONFIG,$(3)) && \
 	echo '$(strip $(2))' >> $(call KCONFIG_DOT_CONFIG,$(3))
 endef
 
 # KCONFIG_ENABLE_OPT (option [, file])
-KCONFIG_ENABLE_OPT  = $(call KCONFIG_MUNGE_DOT_CONFIG, $(1), $(1)=y, $(2))
+# If the option is already set to =m or =y, ignore.
+define KCONFIG_ENABLE_OPT
+	$(Q)if ! grep -q '^$(strip $(1))=[my]' $(call KCONFIG_DOT_CONFIG,$(2)); then \
+		$(call KCONFIG_MUNGE_DOT_CONFIG, $(1), $(1)=y, $(2)); \
+	fi
+endef
 # KCONFIG_SET_OPT (option, value [, file])
-KCONFIG_SET_OPT     = $(call KCONFIG_MUNGE_DOT_CONFIG, $(1), $(1)=$(2), $(3))
+KCONFIG_SET_OPT     = $(Q)$(call KCONFIG_MUNGE_DOT_CONFIG, $(1), $(1)=$(2), $(3))
 # KCONFIG_DISABLE_OPT  (option [, file])
-KCONFIG_DISABLE_OPT = $(call KCONFIG_MUNGE_DOT_CONFIG, $(1), $(SHARP_SIGN) $(1) is not set, $(2))
+KCONFIG_DISABLE_OPT = $(Q)$(call KCONFIG_MUNGE_DOT_CONFIG, $(1), $(SHARP_SIGN) $(1) is not set, $(2))
 
 # Helper functions to determine the name of a package and its
 # directory from its makefile directory, using the $(MAKEFILE_LIST)
@@ -96,7 +101,7 @@ endef
 # $(1): upper-case package or filesystem name
 define json-info
 	"$($(1)_NAME)": {
-		"type": "$($(1)_TYPE)",
+		"type": $(call mk-json-str,$($(1)_TYPE)),
 		$(if $(filter rootfs,$($(1)_TYPE)), \
 			$(call _json-info-fs,$(1)), \
 			$(call _json-info-pkg,$(1)), \
@@ -107,47 +112,61 @@ endef
 # _json-info-pkg, _json-info-pkg-details, _json-info-fs: private helpers
 # for json-info, above
 define _json-info-pkg
-	"name": "$($(1)_RAWNAME)",
+	"name": $(call mk-json-str,$($(1)_RAWNAME)),
 	$(if $($(1)_IS_VIRTUAL), \
 		"virtual": true$(comma),
 		"virtual": false$(comma)
 		$(call _json-info-pkg-details,$(1)) \
 	)
-	"build_dir": "$(patsubst $(CONFIG_DIR)/%,%,$($(1)_BUILDDIR))",
+	"stamp_dir": $(call mk-json-str,$(patsubst $(CONFIG_DIR)/%,%,$($(1)_DIR))),
+	"source_dir": $(call mk-json-str,$(patsubst $(CONFIG_DIR)/%,%,$($(1)_DIR))),
+	"build_dir": $(call mk-json-str,$(patsubst $(CONFIG_DIR)/%,%,$($(1)_BUILDDIR))),
 	$(if $(filter target,$($(1)_TYPE)), \
 		"install_target": $(call yesno-to-bool,$($(1)_INSTALL_TARGET))$(comma) \
 		"install_staging": $(call yesno-to-bool,$($(1)_INSTALL_STAGING))$(comma) \
 		"install_images": $(call yesno-to-bool,$($(1)_INSTALL_IMAGES))$(comma) \
 	)
 	"dependencies": [
-		$(call make-comma-list,$(sort $($(1)_FINAL_ALL_DEPENDENCIES)))
+		$(call make-comma-list, \
+			$(foreach dep,$(sort $($(1)_FINAL_ALL_DEPENDENCIES)), \
+				$(call mk-json-str,$(dep)) \
+			) \
+		)
 	],
 	"reverse_dependencies": [
-		$(call make-comma-list,$(sort $($(1)_RDEPENDENCIES)))
+		$(call make-comma-list, \
+			$(foreach dep,$(sort $($(1)_RDEPENDENCIES)), \
+				$(call mk-json-str,$(dep)) \
+			) \
+		)
 	]
 	$(if $($(1)_CPE_ID_VALID), \
-		$(comma) "cpe-id": "$($(1)_CPE_ID)" \
+		$(comma) "cpe-id": $(call mk-json-str,$($(1)_CPE_ID)) \
 	)
 	$(if $($(1)_IGNORE_CVES),
 		$(comma) "ignore_cves": [
-			$(call make-comma-list,$(sort $($(1)_IGNORE_CVES)))
+			$(call make-comma-list, \
+				$(foreach cve,$(sort $($(1)_IGNORE_CVES)), \
+					$(call mk-json-str,$(cve)) \
+				) \
+			)
 		]
 	)
 endef
 
 define _json-info-pkg-details
-	"version": "$($(1)_DL_VERSION)",
-	"licenses": "$($(1)_LICENSE)",
-	"dl_dir": "$($(1)_DL_SUBDIR)",
+	"version": $(call mk-json-str,$($(1)_DL_VERSION)),
+	"licenses": $(call mk-json-str,$($(1)_LICENSE)),
+	"dl_dir": $(call mk-json-str,$($(1)_DL_SUBDIR)),
 	"downloads": [
 	$(foreach dl,$(sort $($(1)_ALL_DOWNLOADS)),
 		{
-			"source": "$(notdir $(dl))",
+			"source": $(call mk-json-str,$(notdir $(dl))),
 			"uris": [
-				$(call make-comma-list,
-					$(subst \|,|,
-						$(call DOWNLOAD_URIS,$(dl),$(1))
-					)
+				$(call make-comma-list, \
+					$(foreach uri,$(call DOWNLOAD_URIS,$(dl),$(1)), \
+						$(call mk-json-str,$(subst \|,|,$(uri))) \
+					) \
 				)
 			]
 		},
@@ -157,11 +176,15 @@ endef
 
 define _json-info-fs
 	"image_name": $(if $($(1)_FINAL_IMAGE_NAME), \
-				"$($(1)_FINAL_IMAGE_NAME)", \
+				$(call mk-json-str,$($(1)_FINAL_IMAGE_NAME)), \
 				null \
 			),
 	"dependencies": [
-		$(call make-comma-list,$(sort $($(1)_DEPENDENCIES)))
+		$(call make-comma-list, \
+			$(foreach dep,$(sort $($(1)_DEPENDENCIES)), \
+				$(call mk-json-str,$(dep)) \
+			) \
+		)
 	]
 endef
 
@@ -171,22 +194,41 @@ endef
 clean-json = $(strip \
 	$(subst $(comma)},}, $(subst $(comma)$(space)},$(space)}, \
 	$(subst $(comma)],], $(subst $(comma)$(space)],$(space)], \
-	$(subst \,\\, \
 		$(strip $(1)) \
-	))))) \
+	)))) \
 )
+
+# mk-json-str -- escape and double-quote a string to make it a valid json string
+#  - escape \
+#  - escape "
+#  - escape \n
+#  - escape \t
+#  - escape ESC
+#  - escape SPACE (so that we can $(strip) a JSON blurb without squashing multiple spaces)
+# This unfortunately has to be on a single line...
+mk-json-str = "$(subst $(space),\u0020,$(subst $(escape),\u001b,$(subst $(tab),\t,$(subst $(sep),\n,$(subst ",\",$(subst \,\\,$(1)))))))"
+# )))))" # Syntax colouring
 
 ifeq ($(BR2_PER_PACKAGE_DIRECTORIES),y)
 # rsync the contents of per-package directories
 # $1: space-separated list of packages to rsync from
 # $2: 'host' or 'target'
 # $3: destination directory
+# $4: literal "copy" or "hardlink" to copy or hardlink files from src to dest
 define per-package-rsync
 	mkdir -p $(3)
 	$(foreach pkg,$(1),\
-		rsync -a --link-dest=$(PER_PACKAGE_DIR)/$(pkg)/$(2)/ \
-		$(PER_PACKAGE_DIR)/$(pkg)/$(2)/ \
-		$(3)$(sep))
+		rsync -a \
+			--hard-links \
+			$(if $(filter hardlink,$(4)), \
+				--link-dest=$(PER_PACKAGE_DIR)/$(pkg)/$(2)/, \
+				$(if $(filter copy,$(4)), \
+					$(empty), \
+					$(error per-package-rsync can only "copy" or "hardlink", not "$(4)") \
+				) \
+			) \
+			$(PER_PACKAGE_DIR)/$(pkg)/$(2)/ \
+			$(3)$(sep))
 endef
 
 # prepares the per-package HOST_DIR and TARGET_DIR of the current
@@ -197,8 +239,23 @@ endef
 #
 # $1: space-separated list of packages to rsync from
 define prepare-per-package-directory
-	$(call per-package-rsync,$(1),host,$(HOST_DIR))
-	$(call per-package-rsync,$(1),target,$(TARGET_DIR))
+	$(call per-package-rsync,$(1),host,$(HOST_DIR),hardlink)
+	$(call per-package-rsync,$(1),target,$(TARGET_DIR),hardlink)
+endef
+
+# Ensure files like .la, .pc, .pri, .cmake, and so on, point to the
+# proper staging and host directories for the current package: find
+# all text files that contain the PPD root, and replace it with the
+# current package's PPD.
+# $1: destination root directory containing host and staging
+define ppd-fixup-paths
+	$(Q)grep --binary-files=without-match -lrZ '$(PER_PACKAGE_DIR)/[^/]\+/' $(HOST_DIR) \
+	|while read -d '' f; do \
+		file -b --mime-type "$${f}" | grep -q '^text/' || continue; \
+		printf '%s\0' "$${f}"; \
+	done \
+	|xargs -0 --no-run-if-empty \
+		$(SED) 's:$(PER_PACKAGE_DIR)/[^/]\+/:$(1)/:g'
 endef
 endif
 
@@ -223,13 +280,13 @@ define legal-manifest # {HOST|TARGET}, pkg, version, license, license-files, sou
 	echo '"$(2)","$(3)","$(4)","$(5)","$(6)","$(7)","$(8)"' >>$(LEGAL_MANIFEST_CSV_$(1))
 endef
 
-define legal-license-file # pkgname, pkgname-pkgver, pkg-hashfile, filename, file-fullpath, {HOST|TARGET}
-	mkdir -p $(LICENSE_FILES_DIR_$(6))/$(2)/$(dir $(4)) && \
+define legal-license-file # {HOST|TARGET}, pkgname, pkgname-pkgver, filename, file-fullpath, pkg-hashfiles
+	mkdir -p $(LICENSE_FILES_DIR_$(1))/$(3)/$(dir $(4)) && \
 	{ \
-		support/download/check-hash $(3) $(5) $(4); \
+		support/download/check-hash $(5) $(4) $(6); \
 		case $${?} in (0|3) ;; (*) exit 1;; esac; \
 	} && \
-	cp $(5) $(LICENSE_FILES_DIR_$(6))/$(2)/$(4)
+	cp $(5) $(LICENSE_FILES_DIR_$(1))/$(3)/$(4)
 endef
 
 non-virtual-deps = $(foreach p,$(1),$(if $($(call UPPERCASE,$(p))_IS_VIRTUAL),,$(p)))
@@ -242,3 +299,29 @@ legal-deps = \
         $(filter-out $(if $(1:host-%=),host-%),\
             $(call non-virtual-deps,\
                 $($(call UPPERCASE,$(1))_FINAL_RECURSIVE_DEPENDENCIES))),$(p) [$($(call UPPERCASE,$(p))_LICENSE)])
+
+# Helper for self-extracting binaries distributed by NXP, and
+# formerlly Freescale.
+#
+# The --force option makes sure it doesn't fail if the source
+# directory already exists. The --auto-accept skips the license check,
+# as it is not needed in Buildroot because we have legal-info. Since
+# there's a EULA in the binary file, we extract it in this macro, and
+# it should therefore be added to the LICENSE_FILES variable of
+# packages using this macro. Also, remember to set REDISTRIBUTE to
+# "NO". Indeed, this is a legal minefield: the EULA specifies that the
+# Board Support Package includes software and hardware (sic!) for
+# which a separate license is needed...
+#
+# $(1): full path to the archive file
+#
+define NXP_EXTRACT_HELPER
+	awk 'BEGIN      { start = 0; } \
+	     /^EOEULA/  { start = 0; } \
+	                { if (start) print; } \
+	     /<<EOEULA/ { start = 1; }' \
+	    $(1) > $(@D)/EULA
+	cd $(@D) && sh $(1) --force --auto-accept
+	find $(@D)/$(basename $(notdir $(1))) -mindepth 1 -maxdepth 1 -exec mv {} $(@D) \;
+	rmdir $(@D)/$(basename $(notdir $(1)))
+endef

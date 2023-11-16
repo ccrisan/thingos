@@ -1,5 +1,5 @@
-# Hash from: https://download.qt.io/official_releases/qt/5.15/5.15.2/submodules/qtserialbus-everywhere-src-5.15.2.tar.xz.sha256
-sha256  aeeb7e5c0d3f8503215b22e1a84c0002ca67cf63862f6e3c6ef44a67ca31bd88  qtserialbus-everywhere-src-5.15.2.tar.xz
+# Locally calculated
+sha256  fe08415d2348797429dc09722478630ceee3d7477652a2712460e79127b7291b  qtserialbus-f9f7eee60adac72fcf6617d164e3bf61222bb5c5.tar.bz2
 
 # Hashes for license files:
 sha256  edfe70e99be2a7c109d860b19204609e582720b211c50caedac729da372a1253  LICENSE.GPLv2

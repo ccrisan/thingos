@@ -27,7 +27,7 @@
 #
 MESON		= PYTHONNOUSERSITE=y $(HOST_DIR)/bin/meson
 NINJA		= PYTHONNOUSERSITE=y $(HOST_DIR)/bin/ninja
-NINJA_OPTS	= $(if $(VERBOSE),-v) -j$(PARALLEL_JOBS)
+NINJA_OPTS	= $(if $(VERBOSE),-v)
 
 # https://mesonbuild.com/Reference-tables.html#cpu-families
 ifeq ($(BR2_arcle)$(BR2_arceb),y)
@@ -50,8 +50,12 @@ else ifeq ($(BR2_powerpc),y)
 PKG_MESON_TARGET_CPU_FAMILY = ppc
 else ifeq ($(BR2_powerpc64)$(BR2_powerpc64le),y)
 PKG_MESON_TARGET_CPU_FAMILY = ppc64
-else ifeq ($(BR2_riscv),y)
+else ifeq ($(BR2_riscv)$(BR2_RISCV_32),yy)
+PKG_MESON_TARGET_CPU_FAMILY = riscv32
+else ifeq ($(BR2_riscv)$(BR2_RISCV_64),yy)
 PKG_MESON_TARGET_CPU_FAMILY = riscv64
+else ifeq ($(BR2_s390x),y)
+PKG_MESON_TARGET_CPU_FAMILY = s390x
 else ifeq ($(BR2_sh4)$(BR2_sh4eb)$(BR2_sh4a)$(BR2_sh4aeb),y)
 PKG_MESON_TARGET_CPU_FAMILY = sh4
 else ifeq ($(BR2_sparc),y)
@@ -64,8 +68,44 @@ else
 PKG_MESON_TARGET_CPU_FAMILY = $(ARCH)
 endif
 
-HOST_MESON_TARGET_ENDIAN = $(call qstrip,$(call LOWERCASE,$(BR2_ENDIAN)))
-HOST_MESON_TARGET_CPU = $(GCC_TARGET_CPU)
+# To avoid populating the cross-file with non existing compilers,
+# we tie them to /bin/false
+ifeq ($(BR2_INSTALL_LIBSTDCPP),y)
+PKG_MESON_TARGET_CXX = $(TARGET_CXX)
+else
+PKG_MESON_TARGET_CXX = /bin/false
+endif
+
+ifeq ($(BR2_TOOLCHAIN_HAS_FORTRAN),y)
+PKG_MESON_TARGET_FC = $(TARGET_FC)
+else
+PKG_MESON_TARGET_FC = /bin/false
+endif
+
+# Generates sed patterns for patching the cross-compilation.conf template,
+# since Flags might contain commas the arguments are passed indirectly by
+# variable name (stripped to deal with whitespaces).
+# Arguments are variable containing cflags, cxxflags, ldflags, fcflags
+define PKG_MESON_CROSSCONFIG_SED
+        -e "s%@TARGET_CC@%$(TARGET_CC)%g" \
+        -e "s%@TARGET_CXX@%$(PKG_MESON_TARGET_CXX)%g" \
+        -e "s%@TARGET_AR@%$(TARGET_AR)%g" \
+        -e "s%@TARGET_FC@%$(PKG_MESON_TARGET_FC)%g" \
+        -e "s%@TARGET_STRIP@%$(TARGET_STRIP)%g" \
+        -e "s%@TARGET_ARCH@%$(PKG_MESON_TARGET_CPU_FAMILY)%g" \
+        -e "s%@TARGET_CPU@%$(GCC_TARGET_CPU)%g" \
+        -e "s%@TARGET_ENDIAN@%$(call qstrip,$(call LOWERCASE,$(BR2_ENDIAN)))%g" \
+        -e "s%@TARGET_FCFLAGS@%$(call make-sq-comma-list,$($(strip $(4))))%g" \
+        -e "s%@TARGET_CFLAGS@%$(call make-sq-comma-list,$($(strip $(1))))%g" \
+        -e "s%@TARGET_LDFLAGS@%$(call make-sq-comma-list,$($(strip $(3))))%g" \
+        -e "s%@TARGET_CXXFLAGS@%$(call make-sq-comma-list,$($(strip $(2))))%g" \
+        -e "s%@BR2_CMAKE@%$(BR2_CMAKE)%g" \
+        -e "s%@PKGCONF_HOST_BINARY@%$(HOST_DIR)/bin/pkgconf%g" \
+        -e "s%@HOST_DIR@%$(HOST_DIR)%g" \
+        -e "s%@STAGING_DIR@%$(STAGING_DIR)%g" \
+        -e "s%@STATIC@%$(if $(BR2_STATIC_LIBS),true,false)%g" \
+        $(TOPDIR)/support/misc/cross-compilation.conf.in
+endef
 
 ################################################################################
 # inner-meson-package -- defines how the configuration, compilation and
@@ -82,10 +122,6 @@ HOST_MESON_TARGET_CPU = $(GCC_TARGET_CPU)
 ################################################################################
 
 define inner-meson-package
-
-$(2)_CONF_ENV		?=
-$(2)_CONF_OPTS		?=
-$(2)_NINJA_ENV		?=
 
 #
 # Configure step. Only define it if not already defined by the package
@@ -105,33 +141,25 @@ $(2)_CXXFLAGS ?= $$(TARGET_CXXFLAGS)
 define $(2)_CONFIGURE_CMDS
 	rm -rf $$($$(PKG)_SRCDIR)/build
 	mkdir -p $$($$(PKG)_SRCDIR)/build
-	sed -e 's%@TARGET_CROSS@%$$(TARGET_CROSS)%g' \
-	    -e 's%@TARGET_ARCH@%$$(HOST_MESON_TARGET_CPU_FAMILY)%g' \
-	    -e 's%@TARGET_CPU@%$$(HOST_MESON_TARGET_CPU)%g' \
-	    -e 's%@TARGET_ENDIAN@%$$(HOST_MESON_TARGET_ENDIAN)%g' \
-	    -e "s%@TARGET_CFLAGS@%$$(call make-sq-comma-list,$$($(2)_CFLAGS))%g" \
-	    -e "s%@TARGET_LDFLAGS@%$$(call make-sq-comma-list,$$($(2)_LDFLAGS))%g" \
-	    -e "s%@TARGET_CXXFLAGS@%$$(call make-sq-comma-list,$$($(2)_CXXFLAGS))%g" \
-	    -e 's%@HOST_DIR@%$$(HOST_DIR)%g' \
-	    -e 's%@STAGING_DIR@%$$(STAGING_DIR)%g' \
-	    -e 's%@STATIC@%$$(if $$(BR2_STATIC_LIBS),true,false)%g' \
-	    -e "/^\[binaries\]$$$$/s:$$$$:$$(foreach x,$$($(2)_MESON_EXTRA_BINARIES),\n$$(x)):" \
+	sed -e "/^\[binaries\]$$$$/s:$$$$:$$(foreach x,$$($(2)_MESON_EXTRA_BINARIES),\n$$(x)):" \
 	    -e "/^\[properties\]$$$$/s:$$$$:$$(foreach x,$$($(2)_MESON_EXTRA_PROPERTIES),\n$$(x)):" \
-	    package/meson/cross-compilation.conf.in \
+	    $$(call PKG_MESON_CROSSCONFIG_SED,$(2)_CFLAGS,$(2)_CXXFLAGS,$(2)_LDFLAGS,$(2)_FCFLAGS) \
 	    > $$($$(PKG)_SRCDIR)/build/cross-compilation.conf
 	PATH=$$(BR_PATH) \
 	CC_FOR_BUILD="$$(HOSTCC)" \
 	CXX_FOR_BUILD="$$(HOSTCXX)" \
 	$$($$(PKG)_CONF_ENV) \
-	$$(MESON) \
+	$$(MESON) setup \
 		--prefix=/usr \
 		--libdir=lib \
 		--default-library=$(if $(BR2_STATIC_LIBS),static,shared) \
 		--buildtype=$(if $(BR2_ENABLE_RUNTIME_DEBUG),debug,release) \
 		--cross-file=$$($$(PKG)_SRCDIR)/build/cross-compilation.conf \
 		-Db_pie=false \
+		-Db_staticpic=$(if $(BR2_m68k_cf),false,true) \
 		-Dstrip=false \
 		-Dbuild.pkg_config_path=$$(HOST_DIR)/lib/pkgconfig \
+		-Dbuild.cmake_prefix_path=$$(HOST_DIR)/lib/cmake \
 		$$($$(PKG)_CONF_OPTS) \
 		$$($$(PKG)_SRCDIR) $$($$(PKG)_SRCDIR)/build
 endef
@@ -142,13 +170,14 @@ define $(2)_CONFIGURE_CMDS
 	rm -rf $$($$(PKG)_SRCDIR)/build
 	mkdir -p $$($$(PKG)_SRCDIR)/build
 	$$(HOST_CONFIGURE_OPTS) \
-	$$($$(PKG)_CONF_ENV) $$(MESON) \
+	$$($$(PKG)_CONF_ENV) $$(MESON) setup \
 		--prefix=$$(HOST_DIR) \
 		--libdir=lib \
 		--sysconfdir=$$(HOST_DIR)/etc \
 		--localstatedir=$$(HOST_DIR)/var \
 		--default-library=shared \
 		--buildtype=release \
+		--wrap-mode=nodownload \
 		-Dstrip=true \
 		$$($$(PKG)_CONF_OPTS) \
 		$$($$(PKG)_SRCDIR) $$($$(PKG)_SRCDIR)/build
@@ -231,22 +260,13 @@ host-meson-package = $(call inner-meson-package,host-$(pkgname),$(call UPPERCASE
 # own flags if they need to.
 define PKG_MESON_INSTALL_CROSS_CONF
 	mkdir -p $(HOST_DIR)/etc/meson
-	sed -e 's%@TARGET_CROSS@%$(TARGET_CROSS)%g' \
-	    -e 's%@TARGET_ARCH@%$(HOST_MESON_TARGET_CPU_FAMILY)%g' \
-	    -e 's%@TARGET_CPU@%$(HOST_MESON_TARGET_CPU)%g' \
-	    -e 's%@TARGET_ENDIAN@%$(HOST_MESON_TARGET_ENDIAN)%g' \
-	    -e "s%@TARGET_CFLAGS@%$(call make-sq-comma-list,$(TARGET_CFLAGS))@PKG_TARGET_CFLAGS@%g" \
-	    -e "s%@TARGET_LDFLAGS@%$(call make-sq-comma-list,$(TARGET_LDFLAGS))@PKG_TARGET_CFLAGS@%g" \
-	    -e "s%@TARGET_CXXFLAGS@%$(call make-sq-comma-list,$(TARGET_CXXFLAGS))@PKG_TARGET_CFLAGS@%g" \
-	    -e 's%@HOST_DIR@%$(HOST_DIR)%g' \
-	    -e 's%@STAGING_DIR@%$(STAGING_DIR)%g' \
-	    -e 's%@STATIC@%$(if $(BR2_STATIC_LIBS),true,false)%g' \
-	    $(HOST_MESON_PKGDIR)/cross-compilation.conf.in \
+	sed -e "s%@TARGET_CFLAGS@%$(call make-sq-comma-list,$(TARGET_CFLAGS))@PKG_TARGET_CFLAGS@%g" \
+	    -e "s%@TARGET_LDFLAGS@%$(call make-sq-comma-list,$(TARGET_LDFLAGS))@PKG_TARGET_LDFLAGS@%g" \
+	    -e "s%@TARGET_CXXFLAGS@%$(call make-sq-comma-list,$(TARGET_CXXFLAGS))@PKG_TARGET_CXXFLAGS@%g" \
+	    -e "s%@TARGET_FCFLAGS@%$(call make-sq-comma-list,$(TARGET_FCFLAGS))@PKG_TARGET_FCFLAGS@%g" \
+	    $(call PKG_MESON_CROSSCONFIG_SED) \
 	    > $(HOST_DIR)/etc/meson/cross-compilation.conf.in
-	sed -e 's%@PKG_TARGET_CFLAGS@%%g' \
-	    -e 's%@PKG_TARGET_LDFLAGS@%%g' \
-	    -e 's%@PKG_TARGET_CXXFLAGS@%%g' \
-	    $(HOST_DIR)/etc/meson/cross-compilation.conf.in \
+	sed $(call PKG_MESON_CROSSCONFIG_SED,TARGET_CFLAGS,TARGET_CXXFLAGS,TARGET_LDFLAGS,TARGET_FCFLAGS) \
 	    > $(HOST_DIR)/etc/meson/cross-compilation.conf
 endef
 

@@ -1,5 +1,5 @@
-# From https://www.python.org/downloads/release/python-397/
-md5  fddb060b483bc01850a3f412eea1d954  Python-3.9.7.tar.xz
+# From https://www.python.org/downloads/release/python-3116/
+md5  d0c5a1a31efe879723e51addf56dd206  Python-3.11.6.tar.xz
 # Locally computed
-sha256  f8145616e68c00041d1a6399b76387390388f8359581abc24432bb969b5e3c57  Python-3.9.7.tar.xz
-sha256  599826df92bfdcd2702eac691072498bb096c55af04ee984cf90f70ed77b5a70  LICENSE
+sha256  0fab78fa7f133f4f38210c6260d90d7c0d5c7198446419ce057ec7ac2e6f5f38  Python-3.11.6.tar.xz
+sha256  3b2f81fe21d181c499c59a256c8e1968455d6689d269aa85373bfb6af41da3bf  LICENSE

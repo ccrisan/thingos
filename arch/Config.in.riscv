@@ -18,6 +18,9 @@ config BR2_RISCV_ISA_RVD
 config BR2_RISCV_ISA_RVC
 	bool
 
+config BR2_RISCV_ISA_RVV
+	bool
+
 choice
 	prompt "Target Architecture Variant"
 	default BR2_riscv_g
@@ -35,7 +38,6 @@ config BR2_riscv_g
 config BR2_riscv_custom
 	bool "Custom architecture"
 	select BR2_RISCV_ISA_RVI
-	select BR2_RISCV_ISA_CUSTOM_RVA
 
 endchoice
 
@@ -63,6 +65,12 @@ config BR2_RISCV_ISA_CUSTOM_RVD
 config BR2_RISCV_ISA_CUSTOM_RVC
 	bool "Compressed Instructions (C)"
 	select BR2_RISCV_ISA_RVC
+
+config BR2_RISCV_ISA_CUSTOM_RVV
+	bool "Vector Instructions (V)"
+	select BR2_RISCV_ISA_RVV
+	select BR2_ARCH_NEEDS_GCC_AT_LEAST_12
+
 endif
 
 choice
@@ -71,14 +79,22 @@ choice
 
 config BR2_RISCV_32
 	bool "32-bit"
-	select BR2_ARCH_HAS_MMU_MANDATORY
+	select BR2_USE_MMU
 
 config BR2_RISCV_64
 	bool "64-bit"
 	select BR2_ARCH_IS_64
-	select BR2_ARCH_HAS_MMU_OPTIONAL
 
 endchoice
+
+config BR2_RISCV_USE_MMU
+	bool "MMU support"
+	default y
+	depends on BR2_RISCV_64
+	select BR2_USE_MMU
+	help
+	  Enable this option if your RISC-V core has a MMU (Memory
+	  Management Unit).
 
 choice
 	prompt "Target ABI"
@@ -108,6 +124,7 @@ config BR2_RISCV_ABI_LP64
 config BR2_RISCV_ABI_LP64F
 	bool "lp64f"
 	depends on BR2_ARCH_IS_64 && BR2_RISCV_ISA_RVF
+	depends on BR2_USE_MMU
 
 config BR2_RISCV_ABI_LP64D
 	bool "lp64d"
@@ -117,6 +134,9 @@ endchoice
 config BR2_ARCH
 	default "riscv32" if !BR2_ARCH_IS_64
 	default "riscv64" if BR2_ARCH_IS_64
+
+config BR2_NORMALIZED_ARCH
+	default "riscv"
 
 config BR2_ENDIAN
 	default "LITTLE"

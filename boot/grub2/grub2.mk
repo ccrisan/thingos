@@ -4,7 +4,7 @@
 #
 ################################################################################
 
-GRUB2_VERSION = 2.04
+GRUB2_VERSION = 2.06
 GRUB2_SITE = http://ftp.gnu.org/gnu/grub
 GRUB2_SOURCE = grub-$(GRUB2_VERSION).tar.xz
 GRUB2_LICENSE = GPL-3.0+
@@ -13,32 +13,13 @@ GRUB2_DEPENDENCIES = host-bison host-flex host-grub2
 HOST_GRUB2_DEPENDENCIES = host-bison host-flex
 GRUB2_INSTALL_IMAGES = YES
 
-# 0001-build-Fix-GRUB-i386-pc-build-with-Ubuntu-gcc.patch and 2021/03/02
-# security fixes (patches 0029-0149)
+# 0001-Makefile-Make-grub_fstest.pp-depend-on-config-util.h.patch
 define GRUB2_AVOID_AUTORECONF
-	$(Q)touch $(@D)/Makefile.util.am
-	$(Q)touch $(@D)/aclocal.m4
 	$(Q)touch $(@D)/Makefile.in
-	$(Q)touch $(@D)/configure
 endef
 GRUB2_POST_PATCH_HOOKS += GRUB2_AVOID_AUTORECONF
 HOST_GRUB2_POST_PATCH_HOOKS += GRUB2_AVOID_AUTORECONF
 
-# 0002-yylex-Make-lexer-fatal-errors-actually-be-fatal.patch
-GRUB2_IGNORE_CVES += CVE-2020-10713
-# 0005-calloc-Use-calloc-at-most-places.patch
-GRUB2_IGNORE_CVES += CVE-2020-14308
-# 0006-malloc-Use-overflow-checking-primitives-where-we-do-.patch
-GRUB2_IGNORE_CVES += CVE-2020-14309 CVE-2020-14310 CVE-2020-14311
-# 0019-script-Avoid-a-use-after-free-when-redefining-a-func.patch
-GRUB2_IGNORE_CVES += CVE-2020-15706
-# 0028-linux-Fix-integer-overflows-in-initrd-size-handling.patch
-GRUB2_IGNORE_CVES += CVE-2020-15707
-# 2021/03/02 security fixes - patches 0029-0149
-GRUB2_IGNORE_CVES += CVE-2020-25632 CVE-2020-25647 CVE-2020-27749 \
-	CVE-2020-27779 CVE-2021-3418 CVE-2021-20225 CVE-2021-20233
-# 0039-acpi-Don-t-register-the-acpi-command-when-locked-dow.patch
-GRUB2_IGNORE_CVES += CVE-2020-14372
 # CVE-2019-14865 is about a flaw in the grub2-set-bootflag tool, which
 # doesn't exist upstream, but is added by the Redhat/Fedora
 # packaging. Not applicable to Buildroot.
@@ -49,6 +30,29 @@ GRUB2_IGNORE_CVES += CVE-2019-14865
 # grub_linuxefi_secure_validate() is not implemented in the grub2
 # version available in Buildroot.
 GRUB2_IGNORE_CVES += CVE-2020-15705
+# 0002-grub-mkconfig-Restore-umask-for-the-grub.cfg.patch
+GRUB2_IGNORE_CVES += CVE-2021-3981
+# vulnerability is specific to the SUSE distribution
+GRUB2_IGNORE_CVES += CVE-2021-46705
+# 0005-loader-efi-chainloader-Use-grub_loader_set_ex.patch
+GRUB2_IGNORE_CVES += CVE-2022-28736
+# 0006-kern-efi-sb-Reject-non-kernel-files-in-the-shim_lock.patch
+GRUB2_IGNORE_CVES += CVE-2022-28735
+# 0010-video-readers-png-Drop-greyscale-support-to-fix-heap.patch
+GRUB2_IGNORE_CVES += CVE-2021-3695
+# 0011-video-readers-png-Avoid-heap-OOB-R-W-inserting-huff-.patch
+GRUB2_IGNORE_CVES += CVE-2021-3696
+# 0012-video-readers-jpeg-Block-int-underflow-wild-pointer-.patch
+GRUB2_IGNORE_CVES += CVE-2021-3697
+# 0013-net-ip-Do-IP-fragment-maths-safely.patch
+GRUB2_IGNORE_CVES += CVE-2022-28733
+# 0014-net-http-Fix-OOB-write-for-split-http-headers.patch
+# 0015-net-http-Error-out-on-headers-with-LF-without-CR.patch
+GRUB2_IGNORE_CVES += CVE-2022-28734
+# 0017-font-Fix-several-integer-overflows-in-grub_font_cons.patch
+GRUB2_IGNORE_CVES += CVE-2022-2601
+# 0018-font-Fix-an-integer-underflow-in-blit_comb.patch
+GRUB2_IGNORE_CVES += CVE-2022-3775
 
 ifeq ($(BR2_TARGET_GRUB2_INSTALL_TOOLS),y)
 GRUB2_INSTALL_TARGET = YES
@@ -183,7 +187,7 @@ define GRUB2_INSTALL_IMAGES_CMDS
 	$(foreach tuple, $(GRUB2_TUPLES-y), \
 		@$(call MESSAGE,Installing $(tuple) to images directory)
 		mkdir -p $(dir $(GRUB2_IMAGE_$(tuple)))
-		$(HOST_DIR)/usr/bin/grub-mkimage \
+		$(HOST_DIR)/bin/grub-mkimage \
 			-d $(@D)/build-$(tuple)/grub-core/ \
 			-O $(tuple) \
 			-o $(GRUB2_IMAGE_$(tuple)) \

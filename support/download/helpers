@@ -53,6 +53,9 @@ mk_tar_gz() {
     tmp="$(mktemp --tmpdir="$(pwd)")"
     pushd "${in_dir}" >/dev/null
 
+    # Enforce group/others mode bits
+    chmod -R go-wx+X .
+
     # Establish list
     find . -not -type d -and -not \( -false "${find_opts[@]}" \) >"${tmp}.list"
     # Sort list for reproducibility
@@ -70,6 +73,28 @@ mk_tar_gz() {
     rm -f "${tmp}"{.list,.sorted,.tar}
 
     popd >/dev/null
+}
+
+post_process_unpack() {
+    local dest="${1}"
+    local tarball="${2}"
+    local one_file
+
+    mkdir "${dest}"
+    tar -C "${dest}" --strip-components=1 -xzf "${tarball}"
+    one_file="$(find "${dest}" -type f -print0 |LC_ALL=C sort -z |sed 's/\x0.*//')"
+    touch -r "${one_file}" "${dest}.timestamp"
+}
+
+post_process_repack() {
+    local in_dir="${1}"
+    local base_dir="${2}"
+    local out="${3}"
+    local date
+
+    date="@$(stat -c '%Y' "${in_dir}/${base_dir}.timestamp")"
+
+    mk_tar_gz "${in_dir}/${base_dir}" "${base_dir}" "${date}" "${out}"
 }
 
 # Keep this line and the following as last lines in this file.

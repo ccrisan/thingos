@@ -1,5 +1,5 @@
-# md5 from https://pypi.python.org/pypi/PyICU/json
-md5 7656f5cc53a7c18b40e653d6eefdee14   PyICU-1.9.7.tar.gz
-# Locally computed
-sha256  db27cd1cc150b879c5465872bec7fdaf340eca140aa922be03891d5b9f855b61  PyICU-1.9.7.tar.gz
-sha256  74bbadee4ee3c3a1ac0ecfbd74bc7ce64046de1ceddf4717dc923809ca8ffce3  LICENSE
+# md5, sha256 from https://pypi.org/pypi/pyicu/json
+md5  f13ffa91014efde6962c4c1ed6ee7a3c  PyICU-2.11.tar.gz
+sha256  3ab531264cfe9132b3d2ac5d708da9a4649d25f6e6813730ac88cf040a08a844  PyICU-2.11.tar.gz
+# Locally computed sha256 checksums
+sha256  00da5bf22f2386c4f6f07c734490e9b818c4dcf70e6ca49f594e9cec636b9c40  LICENSE

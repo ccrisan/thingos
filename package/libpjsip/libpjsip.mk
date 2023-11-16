@@ -4,15 +4,13 @@
 #
 ################################################################################
 
-LIBPJSIP_VERSION = 2.10
+LIBPJSIP_VERSION = 2.13.1
 LIBPJSIP_SOURCE = pjproject-$(LIBPJSIP_VERSION).tar.gz
 LIBPJSIP_SITE = $(call github,pjsip,pjproject,$(LIBPJSIP_VERSION))
-# https://github.com/pjsip/pjproject/archive/2.10.tar.gz
 
-LIBPJSIP_DEPENDENCIES = libsrtp
 LIBPJSIP_LICENSE = GPL-2.0+
 LIBPJSIP_LICENSE_FILES = COPYING
-LIBPJSIP_CPE_ID_VENDOR = pjsip
+LIBPJSIP_CPE_ID_VENDOR = teluu
 LIBPJSIP_CPE_ID_PRODUCT = pjsip
 LIBPJSIP_INSTALL_STAGING = YES
 LIBPJSIP_MAKE = $(MAKE1)
@@ -38,8 +36,7 @@ LIBPJSIP_CONF_OPTS = \
 	--disable-l16-codec \
 	--disable-g722-codec \
 	--disable-ipp \
-	--disable-silk \
-	--with-external-srtp
+	--disable-silk
 
 # Note: aconfigure.ac is broken: --enable-epoll or --disable-epoll will
 # both enable it. But that's OK, epoll is better than the alternative,
@@ -101,6 +98,22 @@ else
 LIBPJSIP_CONF_OPTS += --disable-libsamplerate
 endif
 
+ifeq ($(BR2_PACKAGE_LIBSRTP),y)
+LIBPJSIP_DEPENDENCIES += libsrtp
+LIBPJSIP_CONF_OPTS += \
+	--enable-libsrtp \
+	--with-external-srtp
+else
+LIBPJSIP_CONF_OPTS += --disable-libsrtp
+endif
+
+ifeq ($(BR2_PACKAGE_LIBUPNP),y)
+LIBPJSIP_DEPENDENCIES += libupnp
+LIBPJSIP_CONF_OPTS += --with-upnp=$(STAGING_DIR)/usr
+else
+LIBPJSIP_CONF_OPTS += --disable-upnp
+endif
+
 ifeq ($(BR2_PACKAGE_LIBV4L),y)
 # --enable-v4l2 is broken (check for libv4l2 will be omitted)
 LIBPJSIP_DEPENDENCIES += libv4l
@@ -159,6 +172,9 @@ endif
 
 ifeq ($(BR2_PACKAGE_UTIL_LINUX_LIBUUID),y)
 LIBPJSIP_DEPENDENCIES += util-linux
+LIBPJSIP_CONF_OPTS += --enable-libuuid
+else
+LIBPJSIP_CONF_OPTS += --disable-libuuid
 endif
 
 # disable build of test binaries

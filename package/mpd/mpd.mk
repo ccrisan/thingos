@@ -4,17 +4,22 @@
 #
 ################################################################################
 
-MPD_VERSION_MAJOR = 0.22
-MPD_VERSION = $(MPD_VERSION_MAJOR).11
+MPD_VERSION_MAJOR = 0.23
+MPD_VERSION = $(MPD_VERSION_MAJOR).14
 MPD_SOURCE = mpd-$(MPD_VERSION).tar.xz
-MPD_SITE = http://www.musicpd.org/download/mpd/$(MPD_VERSION_MAJOR)
-MPD_DEPENDENCIES = host-pkgconf boost
+MPD_SITE = https://www.musicpd.org/download/mpd/$(MPD_VERSION_MAJOR)
+MPD_DEPENDENCIES = host-pkgconf boost fmt
 MPD_LICENSE = GPL-2.0+
 MPD_LICENSE_FILES = COPYING
+# these refer to the FreeBSD PPP daemon
+MPD_IGNORE_CVES = CVE-2020-7465 CVE-2020-7466
 MPD_SELINUX_MODULES = mpd
 MPD_CONF_OPTS = \
 	-Daudiofile=disabled \
-	-Ddocumentation=disabled
+	-Ddocumentation=disabled \
+	-Dopenmpt=disabled \
+	-Dpipewire=disabled \
+	-Dsnapcast=false
 
 # Zeroconf support depends on libdns_sd from avahi.
 ifeq ($(BR2_PACKAGE_MPD_AVAHI_SUPPORT),y)
@@ -24,12 +29,26 @@ else
 MPD_CONF_OPTS += -Dzeroconf=disabled
 endif
 
+ifeq ($(BR2_PACKAGE_EXPAT),y)
+MPD_DEPENDENCIES += expat
+MPD_CONF_OPTS += -Dexpat=enabled
+else
+MPD_CONF_OPTS += -Dexpat=disabled
+endif
+
 # MPD prefers libicu for utf8 collation instead of libglib2.
 ifeq ($(BR2_PACKAGE_ICU),y)
 MPD_DEPENDENCIES += icu
 MPD_CONF_OPTS += -Dicu=enabled
 else
 MPD_CONF_OPTS += -Dicu=disabled
+endif
+
+ifeq ($(BR2_PACKAGE_YAJL),y)
+MPD_DEPENDENCIES += yajl
+MPD_CONF_OPTS += -Dyajl=enabled
+else
+MPD_CONF_OPTS += -Dyajl=disabled
 endif
 
 ifeq ($(BR2_PACKAGE_MPD_ALSA),y)
@@ -114,6 +133,13 @@ else
 MPD_CONF_OPTS += -Did3tag=disabled
 endif
 
+ifeq ($(BR2_PACKAGE_MPD_IO_URING),y)
+MPD_DEPENDENCIES += liburing
+MPD_CONF_OPTS += -Dio_uring=enabled
+else
+MPD_CONF_OPTS += -Dio_uring=disabled
+endif
+
 ifeq ($(BR2_PACKAGE_MPD_JACK2),y)
 MPD_DEPENDENCIES += jack2
 MPD_CONF_OPTS += -Djack=enabled
@@ -178,7 +204,7 @@ MPD_CONF_OPTS += -Dsoxr=disabled
 endif
 
 ifeq ($(BR2_PACKAGE_MPD_MAD),y)
-MPD_DEPENDENCIES += libid3tag libmad
+MPD_DEPENDENCIES += libmad
 MPD_CONF_OPTS += -Dmad=enabled
 else
 MPD_CONF_OPTS += -Dmad=disabled
@@ -192,7 +218,7 @@ MPD_CONF_OPTS += -Dmodplug=disabled
 endif
 
 ifeq ($(BR2_PACKAGE_MPD_MPG123),y)
-MPD_DEPENDENCIES += libid3tag mpg123
+MPD_DEPENDENCIES += mpg123
 MPD_CONF_OPTS += -Dmpg123=enabled
 else
 MPD_CONF_OPTS += -Dmpg123=disabled
@@ -239,7 +265,7 @@ MPD_CONF_OPTS += -Dpulse=disabled
 endif
 
 ifeq ($(BR2_PACKAGE_MPD_QOBUZ),y)
-MPD_DEPENDENCIES += libgcrypt yajl
+MPD_DEPENDENCIES += libgcrypt
 MPD_CONF_OPTS += -Dqobuz=enabled
 else
 MPD_CONF_OPTS += -Dqobuz=disabled
@@ -260,7 +286,6 @@ MPD_CONF_OPTS += -Dsidplay=disabled
 endif
 
 ifeq ($(BR2_PACKAGE_MPD_SOUNDCLOUD),y)
-MPD_DEPENDENCIES += yajl
 MPD_CONF_OPTS += -Dsoundcloud=enabled
 else
 MPD_CONF_OPTS += -Dsoundcloud=disabled
@@ -273,8 +298,10 @@ else
 MPD_CONF_OPTS += -Dsqlite=disabled
 endif
 
-ifneq ($(BR2_PACKAGE_MPD_TCP),y)
+ifeq ($(BR2_PACKAGE_MPD_TCP),y)
 MPD_CONF_OPTS += -Dtcp=true
+else
+MPD_CONF_OPTS += -Dtcp=false
 endif
 
 ifeq ($(BR2_PACKAGE_MPD_TREMOR),y)
@@ -291,12 +318,15 @@ else
 MPD_CONF_OPTS += -Dtwolame=disabled
 endif
 
-ifeq ($(BR2_PACKAGE_MPD_UPNP),y)
+ifeq ($(BR2_PACKAGE_MPD_UPNP_PUPNP),y)
 MPD_DEPENDENCIES += \
-	expat \
 	libupnp
-MPD_CONF_OPTS += -Dupnp=enabled
-else
+MPD_CONF_OPTS += -Dupnp=pupnp
+else ifeq ($(BR2_PACKAGE_MPD_UPNP_NPUPNP),y)
+MPD_DEPENDENCIES += \
+	libnpupnp
+MPD_CONF_OPTS += -Dupnp=npupnp
+else ifeq ($(BR2_PACKAGE_MPD_UPNP_DISABLED),y)
 MPD_CONF_OPTS += -Dupnp=disabled
 endif
 

@@ -4,10 +4,11 @@
 #
 ################################################################################
 
-LUAJIT_VERSION = 05f1984e1a862e4b3d3c3b370c773492e2edf84a
+LUAJIT_VERSION = 8635cbabf3094c4d8bd00578c7d812bea87bb2d3
 LUAJIT_SITE = $(call github,LuaJIT,LuaJIT,$(LUAJIT_VERSION))
 LUAJIT_LICENSE = MIT
 LUAJIT_LICENSE_FILES = COPYRIGHT
+LUAJIT_CPE_ID_VENDOR = luajit
 
 LUAJIT_INSTALL_STAGING = YES
 

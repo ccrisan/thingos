@@ -1,7 +1,7 @@
-# From http://download.strongswan.org/strongswan-5.9.4.tar.bz2.md5
-md5  9c387eb77f0159fdefbcf7e81c905c35  strongswan-5.9.4.tar.bz2
+# From http://download.strongswan.org/strongswan-5.9.11.tar.bz2.md5
+md5  673e194cd256af77b46928179f2c81ad  strongswan-5.9.11.tar.bz2
 # Calculated based on the hash above
-sha256  45fdf1a4c2af086d8ff5b76fd7b21d3b6f0890f365f83bf4c9a75dda26887518  strongswan-5.9.4.tar.bz2
+sha256  ddf53f1f26ad26979d5f55e8da95bd389552f5de3682e35593f9a70b2584ed2d  strongswan-5.9.11.tar.bz2
 # Locally calculated
 sha256  8177f97513213526df2cf6184d8ff986c675afb514d4e68a404010521b880643  COPYING
 sha256  2292e21797754548dccdef9eef6aee7584e552fbd890fa914e1de8d3577d23f0  LICENSE

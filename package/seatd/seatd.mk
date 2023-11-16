@@ -4,7 +4,7 @@
 #
 ################################################################################
 
-SEATD_VERSION = 0.6.3
+SEATD_VERSION = 0.8.0
 SEATD_SOURCE = $(SEATD_VERSION).tar.gz
 SEATD_SITE = https://git.sr.ht/~kennylevinsen/seatd/archive
 SEATD_LICENSE = MIT
@@ -17,7 +17,7 @@ SEATD_CONF_OPTS += \
 	-Dwerror=false
 
 ifeq ($(BR2_PACKAGE_SYSTEMD_LOGIND),y)
-SEATD_CONF_OPTS += -Dlibseat-logind=enabled
+SEATD_CONF_OPTS += -Dlibseat-logind=systemd
 SEATD_DEPENDENCIES += systemd
 else
 SEATD_CONF_OPTS += -Dlibseat-logind=disabled
@@ -33,7 +33,7 @@ ifeq ($(BR2_PACKAGE_SEATD_DAEMON),y)
 SEATD_CONF_OPTS += -Dlibseat-seatd=enabled -Dserver=enabled
 
 define SEATD_USERS
-	- - video -1 - - - - -
+	- - seat -1 - - - - -
 endef
 
 define SEATD_INSTALL_INIT_SYSV

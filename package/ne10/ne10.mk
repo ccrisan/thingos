@@ -16,6 +16,12 @@ NE10_CONF_OPTS = \
 	-DNE10_BUILD_UNIT_TEST=OFF \
 	-DNE10_LINUX_TARGET_ARCH=$(if $(BR2_aarch64),aarch64,armv7)
 
+ifeq ($(BR2_INSTALL_LIBSTDCPP),y)
+NE10_CONF_OPTS += -DNE10_ENABLE_DSP=ON
+else
+NE10_CONF_OPTS += -DNE10_ENABLE_DSP=OFF
+endif
+
 ifeq ($(BR2_STATIC_LIBS),)
 NE10_CONF_OPTS += \
 	-DNE10_BUILD_SHARED=ON
@@ -36,8 +42,10 @@ define NE10_INSTALL_STAGING_CMDS
 	$(NE10_INSTALL_STAGING_SHARED_LIB)
 endef
 
+ifeq ($(BR2_STATIC_LIBS),)
 define NE10_INSTALL_TARGET_CMDS
 	cp -dpf $(@D)/modules/libNE10*.so* $(TARGET_DIR)/usr/lib/
 endef
+endif
 
 $(eval $(cmake-package))

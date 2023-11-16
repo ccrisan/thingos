@@ -4,7 +4,7 @@
 #
 ################################################################################
 
-MICROPYTHON_VERSION = 1.17
+MICROPYTHON_VERSION = 1.19.1
 MICROPYTHON_SITE = $(call github,micropython,micropython,v$(MICROPYTHON_VERSION))
 # Micropython has a lot of code copied from other projects, and also a number
 # of submodules for various libs. However, we don't even clone the submodules,
@@ -36,6 +36,7 @@ MICROPYTHON_MAKE_OPTS += \
 	MICROPY_PY_USSL=0 \
 	CROSS_COMPILE=$(TARGET_CROSS) \
 	CFLAGS_EXTRA=$(MICROPYTHON_CFLAGS) \
+	LDFLAGS_EXTRA="$(TARGET_LDFLAGS)" \
 	CWARN=
 
 define MICROPYTHON_BUILD_CMDS

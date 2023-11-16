@@ -4,11 +4,13 @@
 #
 ################################################################################
 
-PYTHON_WEBARGS_VERSION = 5.3.1
+PYTHON_WEBARGS_VERSION = 8.2.0
 PYTHON_WEBARGS_SOURCE = webargs-$(PYTHON_WEBARGS_VERSION).tar.gz
-PYTHON_WEBARGS_SITE = https://files.pythonhosted.org/packages/b2/df/156e105358c06b6f76a17cb3ee3eb82789a3abbc482a5a2f8b576e81112c
+PYTHON_WEBARGS_SITE = https://files.pythonhosted.org/packages/4b/7d/fece8e6547b3edde8953b1c84a63da02e1a88efcb9d7d485e4d1b25d9c47
 PYTHON_WEBARGS_SETUP_TYPE = setuptools
-PYTHON_WEBARGS_LICENSE = Apache-2.0
-PYTHON_WEBARGS_LICENSE_FILES = LICENSE.txt
+PYTHON_WEBARGS_LICENSE = MIT
+PYTHON_WEBARGS_LICENSE_FILES = LICENSE
+PYTHON_WEBARGS_CPE_ID_VENDOR = webargs_project
+PYTHON_WEBARGS_CPE_ID_PRODUCT = webargs
 
 $(eval $(python-package))
