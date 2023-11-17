@@ -249,7 +249,7 @@ function show_latest() {
             url="$(cut -d / -f 1,2,3 <<< ${os_firmware_latest})${path}"
         fi
         url=$(expand_placeholders ${url})
-    else
+    elif [[ -x ${LATEST_VERSION_CMD} ]]; then
         # Command specified by ${LATEST_VERSION_CMD} returns two lines:
         # * the first one is the stable version
         # * the second one being the "beta" version
@@ -267,6 +267,9 @@ function show_latest() {
         version=${version_line[0]}
         url=${version_line[1]}
         date=${version_line[2]}
+    else
+        echo "Latest version details not available"
+        return
     fi
 
     echo "${version}  ${url}  ${date}"
