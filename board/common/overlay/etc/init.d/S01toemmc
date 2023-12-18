@@ -1,0 +1,32 @@
+#!/bin/bash
+
+TOEMMC_PROG="/sbin/toemmc"
+TOEMMC_CONF="/boot/toemmc.conf"
+
+test -s ${TOEMMC_CONF} || exit 0
+test -n "${OS_VERSION}" || source /etc/init.d/base
+
+
+case "$1" in
+    start)
+        source ${TOEMMC_CONF}
+        if [[ -n "${EMMC_DEV}" ]]; then
+            msg "Flashing EMMC"
+            ${TOEMMC_PROG} ${EMMC_DEV}
+            sync
+            if [[ -n "${POST_CMD}" ]]; then
+                bash -c "${POST_CMD}"
+            fi
+        fi
+        ;;
+
+    stop)
+        true
+        ;;
+
+    *)
+        echo "Usage: $0 {start}"
+        exit 1
+esac
+
+exit $?

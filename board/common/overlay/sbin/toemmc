@@ -66,6 +66,11 @@ mkdir -p /data/.emmc_boot
 mount ${emmc_dev}p1 /data/.emmc_boot
 cd /data/.emmc_boot
 
+if [[ -f toemmc.conf ]]; then
+    msg "Removing toemmc.conf"
+    rm -f toemmc.conf
+fi
+
 if [[ -f /boot/factory-defaults.tar.xz ]]; then
     msg "Copying factory defaults"
     cp /boot/factory-defaults.tar.xz .
