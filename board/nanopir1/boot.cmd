@@ -1,16 +1,13 @@
 setenv load_addr "0x44000000"
 setenv rootfstype "ext4"
 setenv devtype "mmc"
-
-echo "Boot script loaded from ${devtype} ${devnum}"
+setenv devnum 0
 
 if mmc dev 1; then
     setenv rootdev "/dev/mmcblk1p2"
-    setenv devnum 1
     echo "Booting from SD card"
 else
     setenv rootdev "/dev/mmcblk3p2"
-    setenv devnum 0
     echo "Booting from eMMC"
 fi
 
