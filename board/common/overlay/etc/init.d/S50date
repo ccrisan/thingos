@@ -66,8 +66,15 @@ set_current_date_ntp() {
 set_current_date_sntp() {
     sntp_args="-t ${DATE_TIMEOUT} -K /dev/null -Ss"
     server=$(cat ${NTP_CONF} | grep pool | head -n 1 | cut -d ' ' -f 2)
-    ${PROG_SNTP} ${sntp_args} ${server} &>${LOG_SNTP}
-    if [[ $? == 0 ]]; then
+    
+    # Retry command 3 times
+    truncate -s0 ${LOG_SNTP}
+    ok=false
+    for (( i = 0; i < 3; i++ )); do
+        ${PROG_SNTP} ${sntp_args} ${server} &>>${LOG_SNTP} && { ok=true; break; }
+        sleep 1
+    done
+    if [[ ${ok} == true ]]; then
         logger -t date "current system date/time set to $(date) via SNTP"
         return 0
     else
