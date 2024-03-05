@@ -1,0 +1,4 @@
+#!/bin/sh
+
+cat /boot/uEnv.txt | grep -v initrd > /boot/uEnv.txt.new
+mv /boot/uEnv.txt.new /boot/uEnv.txt
