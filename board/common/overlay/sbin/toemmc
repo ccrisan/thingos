@@ -41,6 +41,7 @@ root_info=(${root_info})
 
 root_end_sector=${root_info[2]}
 total_size=$(((root_end_sector + 1) * 512 / 10485760))  # x 10MB
+root_part_no=$(echo ${ROOT_DEV} | grep -oE '[0-9]$')
 
 msg "Unmounting all EMMC partitions"
 umount ${emmc_dev}* &>/dev/null
@@ -56,14 +57,15 @@ sleep 1
 msg "Removing data partition from EMMC"
 fdisk >/dev/null ${emmc_dev} <<END
 d
-3
+$(( root_part_no + 1 ))
 w
 END
 sync
 
-msg "Mounting ${emmc_dev}p1 boot partition"
+emmc_boot_dev=${emmc_dev}p$(( root_part_no - 1 ))
+msg "Mounting ${emmc_boot_dev} boot partition"
 mkdir -p /data/.emmc_boot
-mount ${emmc_dev}p1 /data/.emmc_boot
+mount ${emmc_boot_dev} /data/.emmc_boot
 cd /data/.emmc_boot
 
 if [[ -f toemmc.conf ]]; then

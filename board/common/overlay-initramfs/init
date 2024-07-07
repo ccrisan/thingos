@@ -13,13 +13,15 @@ mount -t proc proc /proc
 
 ROOT_DEV=$(cat /proc/cmdline | grep -oE 'root=[/a-z0-9]+' | cut -d '=' -f 2)
 if echo ${ROOT_DEV:-2} | grep -E 'p[0-9]' &>/dev/null; then  # e.g. /dev/mmcblk0p2
-    DISK_DEV=${ROOT_DEV:0:$((${#ROOT_DEV}-2))}
-    BOOT_DEV=${DISK_DEV}p1
-    DATA_DEV=${DISK_DEV}p3
+    ROOT_PART_NO=$(echo ${ROOT_DEV} | grep -oE '[0-9]$')
+    DISK_DEV=${ROOT_DEV:0:$(( ${#ROOT_DEV} - 2 ))}
+    BOOT_DEV=${DISK_DEV}p$(( ROOT_PART_NO - 1 ))
+    DATA_DEV=${DISK_DEV}p$(( ROOT_PART_NO + 1 ))
 else  # e.g. /dev/sdc2
-    DISK_DEV=${ROOT_DEV:0:$((${#ROOT_DEV}-1))}
-    BOOT_DEV=${DISK_DEV}1
-    DATA_DEV=${DISK_DEV}3
+    ROOT_PART_NO=$(echo ${ROOT_DEV} | grep -oE '[0-9]$')
+    DISK_DEV=${ROOT_DEV:0:$(( ${#ROOT_DEV} - 1 ))}
+    BOOT_DEV=${DISK_DEV}$(( ROOT_PART_NO - 1 ))
+    DATA_DEV=${DISK_DEV}$(( ROOT_PART_NO + 1 ))
 fi
 
 msg "Waiting for sdcard"
