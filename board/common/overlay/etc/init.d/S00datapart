@@ -12,15 +12,15 @@ case "$1" in
         if [[ "${root_dev}" =~ ^([/a-z0-9]+)(p[0-9])$ ]]; then  # e.g. /dev/mmcblk0p2
             disk_dev=${BASH_REMATCH[1]}
             disk_dev_prefix=${disk_dev}p
-            boot_dev=${disk_dev}p1
-            root_dev=${disk_dev}p2
-            data_dev=${disk_dev}p3
+            root_part_no=$(echo ${root_dev} | grep -oE '[0-9]$')
+            boot_dev=${disk_dev}p$(( root_part_no - 1 ))
+            data_dev=${disk_dev}p$(( root_part_no + 1 ))
         elif [[ "${root_dev}" =~ ^([/a-z0-9]+)([0-9])$ ]]; then  # e.g. /dev/sdc2
             disk_dev=${BASH_REMATCH[1]}
             disk_dev_prefix=${disk_dev}
-            boot_dev=${disk_dev}1
-            root_dev=${disk_dev}2
-            data_dev=${disk_dev}3
+            root_part_no=$(echo ${root_dev} | grep -oE '[0-9]$')
+            boot_dev=${disk_dev}$(( root_part_no - 1 ))
+            data_dev=${disk_dev}$(( root_part_no + 1 ))
         else
             msg_fail "unknown (${root_dev})"
             exit 1
@@ -28,6 +28,9 @@ case "$1" in
 
         for ext in disk extra overlay; do
             sed "s,"'${disk_dev_prefix}'",${disk_dev_prefix},g" /etc/fstab.${ext} > /tmp/fstab.${ext}
+            sed -i "s,"'${boot_dev}'",${boot_dev},g" /etc/fstab.${ext}
+            sed -i "s,"'${root_dev}'",${root_dev},g" /etc/fstab.${ext}
+            sed -i "s,"'${data_dev}'",${data_dev},g" /etc/fstab.${ext}
         done
 
         # Output disk info to /tmp/disk_info
@@ -62,7 +65,7 @@ case "$1" in
         data_start=$((DATA_OFFS * 2048))
         echo -e "n
             p
-            3
+            $(( root_part_no + 1 ))
             ${data_start}
             \n
             w" | /sbin/fdisk ${disk_dev} &>/dev/null
