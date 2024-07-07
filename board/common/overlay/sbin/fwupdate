@@ -488,13 +488,14 @@ function do_extract() {
 
     # TODO verify hash
 
-    boot_info=$(fdisk --bytes -l -o device,start,end,size ${FW_FILE_EXTR} | grep "${FW_FILE_EXTR}1")
+    root_part_no=$(echo ${ROOT_DEV} | grep -oE '[0-9]$')
+    boot_info=$(fdisk --bytes -l -o device,start,end,size ${FW_FILE_EXTR} | grep "${FW_FILE_EXTR}$(( root_part_no - 1 ))")
     boot_info=(${boot_info})
     boot_start=${boot_info[1]}
     boot_end=${boot_info[2]}
     boot_size=$((boot_info[3] / 512))
 
-    root_info=$(fdisk --bytes -l -o device,start,end,size ${FW_FILE_EXTR} | grep "${FW_FILE_EXTR}2")
+    root_info=$(fdisk --bytes -l -o device,start,end,size ${FW_FILE_EXTR} | grep "${FW_FILE_EXTR}${root_part_no}")
     root_info=(${root_info})
     root_start=${root_info[1]}
     root_end=${root_info[2]}
