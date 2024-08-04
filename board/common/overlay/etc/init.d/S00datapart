@@ -28,9 +28,9 @@ case "$1" in
 
         for ext in disk extra overlay; do
             sed "s,"'${disk_dev_prefix}'",${disk_dev_prefix},g" /etc/fstab.${ext} > /tmp/fstab.${ext}
-            sed -i "s,"'${boot_dev}'",${boot_dev},g" /etc/fstab.${ext}
-            sed -i "s,"'${root_dev}'",${root_dev},g" /etc/fstab.${ext}
-            sed -i "s,"'${data_dev}'",${data_dev},g" /etc/fstab.${ext}
+            sed -i "s,"'${boot_dev}'",${boot_dev},g" /tmp/fstab.${ext}
+            sed -i "s,"'${root_dev}'",${root_dev},g" /tmp/fstab.${ext}
+            sed -i "s,"'${data_dev}'",${data_dev},g" /tmp/fstab.${ext}
         done
 
         # Output disk info to /tmp/disk_info
