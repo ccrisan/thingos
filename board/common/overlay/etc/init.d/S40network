@@ -126,7 +126,7 @@ function start_eth() {
     # wait for driver
     w=3
     count=0
-    while ! ifconfig ${OS_ETH} >/dev/null 2>&1; do
+    while ! ifconfig ${OS_ETH} up >/dev/null 2>&1; do
         sleep 1
         count=$((${count} + 1))
         if [[ ${count} -ge ${w} ]]; then
@@ -134,9 +134,6 @@ function start_eth() {
             return 1
         fi
     done
-
-    # bring it up
-    ifconfig ${OS_ETH} up
 
     # wait for link
     test "${LINK_WATCH}" == "true" || LINK_NEGO_TIMEOUT=5
