@@ -25,6 +25,7 @@ case "$1" in
             msg_fail "unknown (${root_dev})"
             exit 1
         fi
+        part_table_type=$(fdisk -l ${disk_dev} | grep Disklabel | tr -d ' ' | cut -d : -f 2)
 
         for ext in disk extra overlay; do
             sed "s,"'${disk_dev_prefix}'",${disk_dev_prefix},g" /etc/fstab.${ext} > /tmp/fstab.${ext}
@@ -40,6 +41,7 @@ case "$1" in
         echo "BOOT_DEV=${boot_dev}"
         echo "ROOT_DEV=${root_dev}"
         echo "DATA_DEV=${data_dev}"
+        echo "PART_TABLE_TYPE=${part_table_type}"
         } > /tmp/disk_info
 
         msg_done "${disk_dev}"

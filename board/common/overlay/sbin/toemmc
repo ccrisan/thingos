@@ -33,6 +33,10 @@ NET_CONFIG_FILES=(
 emmc_dev=$1
 
 source /tmp/disk_info
+if [[ "${DISK_DEV}" == "${emmc_dev}" ]]; then
+    msg "SD card and eMMC devices are the same"
+    exit 1
+fi
 
 msg "SD card device is ${DISK_DEV}"
 
@@ -48,7 +52,7 @@ umount ${emmc_dev}* &>/dev/null
 partx -d ${emmc_dev} &>/dev/null
 
 msg "Wiping any GPT backup from eMMC"
-emmc_sectors=$(fdisk -l ${emmc_dev} | head -n1 | grep -oE '[[:digit:]]+ sectors' | cut -d ' ' -f 1)
+emmc_sectors=$(fdisk -l ${emmc_dev} 2>/dev/null | head -n1 | grep -oE '[[:digit:]]+ sectors' | cut -d ' ' -f 1)
 dd if=/dev/zero of=${emmc_dev} seek=$(( emmc_sectors - 34 )) count=34 status=none
 sync
 
@@ -60,11 +64,20 @@ partx -a ${emmc_dev} &>/dev/null
 sleep 1
 
 msg "Removing data partition from eMMC"
-fdisk >/dev/null ${emmc_dev} <<END
+if [[ "${PART_TABLE_TYPE}" == gpt ]]; then
+    gdisk &>/dev/null ${emmc_dev} <<END
+d
+$(( root_part_no + 1 ))
+w
+Y
+END
+else
+    fdisk >/dev/null ${emmc_dev} <<END
 d
 $(( root_part_no + 1 ))
 w
 END
+fi
 sync
 
 emmc_boot_dev=${emmc_dev}p$(( root_part_no - 1 ))
