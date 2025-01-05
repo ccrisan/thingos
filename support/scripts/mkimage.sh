@@ -24,6 +24,7 @@ BOARD=$1
 BINARIES_DIR=$(dirname $0)/../../output/${BOARD}/images/
 BOARD_DIR=$(dirname $0)/../../board/${BOARD}
 COMMON_DIR=$(dirname $0)/../../board/common
+HOST_DIR=$(dirname $0)/../../output/${BOARD}/host/
 
 BOOT_START=${BOOT_START:-1}  # MB
 
@@ -73,6 +74,10 @@ mount ${loop_dev} ${BOOT}
 msg "copying boot filesystem contents"
 cp -r ${BOOT_SRC}/* ${BOOT}
 sync
+
+if [[ "${USE_SYSLINUX}" == true ]]; then
+    ${HOST_DIR}/sbin/extlinux --install ${BOOT}
+fi
 
 msg "unmounting boot filesystem"
 umount ${BOOT}
@@ -141,15 +146,6 @@ fi
 # disk image
 msg "creating disk loop device ${LOOP_DEV}"
 dd if=/dev/zero of=${DISK_IMG} bs=1M count=${DISK_SIZE}
-if [[ -n "${BOOT_BIN}" ]]; then
-    for boot_bin in "${BOOT_BIN[@]}"; do
-        IFS=@ boot_bin=(${boot_bin}); unset IFS
-        bin=${boot_bin[0]}
-        seek=${boot_bin[1]}
-        msg "copying boot binary ${bin} @ ${seek}"
-        dd conv=notrunc if=${bin} of=${DISK_IMG} bs=512 seek=${seek}
-    done
-fi
 loop_dev=$(losetup --show ${LOOP_DEV} ${DISK_IMG})
 
 msg "partitioning disk"
@@ -176,6 +172,8 @@ a
 1
 w
 END
+    boot_part_no=1
+    root_part_no=2
 elif [[ ${PART_TABLE_TYPE} == gpt ]]; then
     fdisk -u=sectors ${loop_dev} <<END
 g
@@ -192,6 +190,8 @@ t
 1
 w
 END
+    boot_part_no=1
+    root_part_no=2
 else
     msg "unknown partition table type ${PART_TABLE_TYPE}"
     exit 1
@@ -200,11 +200,21 @@ set -e
 sync
 
 msg "reading partition offsets"
-boot_offs=$(fdisk -u=sectors -l ${loop_dev} | grep -E 'loop([[:digit:]])+p1' | tr -d '*' | tr -s ' ' | cut -d ' ' -f 2)
-root_offs=$(fdisk -u=sectors -l ${loop_dev} | grep -E 'loop([[:digit:]])+p2' | tr -d '*' | tr -s ' ' | cut -d ' ' -f 2)
+boot_offs=$(fdisk -u=sectors -l ${loop_dev} | grep -E "loop([[:digit:]])+p${boot_part_no}" | tr -d '*' | tr -s ' ' | cut -d ' ' -f 2)
+root_offs=$(fdisk -u=sectors -l ${loop_dev} | grep -E "loop([[:digit:]])+p${root_part_no}" | tr -d '*' | tr -s ' ' | cut -d ' ' -f 2)
 
 msg "destroying disk loop device (${loop_dev})"
 losetup -d ${loop_dev}
+
+if [[ -n "${BOOT_BIN}" ]]; then
+    for boot_bin in "${BOOT_BIN[@]}"; do
+        IFS=@ boot_bin=(${boot_bin}); unset IFS
+        bin=${boot_bin[0]}
+        seek=${boot_bin[1]}
+        msg "copying boot binary ${bin} @ ${seek}"
+        dd conv=notrunc if=${bin} of=${DISK_IMG} bs=512 seek=${seek}
+    done
+fi
 
 msg "creating boot loop device"
 loop_dev=$(losetup --show -o $((${boot_offs} * 512)) ${LOOP_DEV} ${DISK_IMG})
