@@ -199,6 +199,7 @@ rm -f ${TARGET}/etc/init.d/S21rngd
 rm -f ${TARGET}/etc/init.d/S30cgroupfs
 rm -f ${TARGET}/etc/init.d/S35iptables
 rm -f ${TARGET}/etc/init.d/S40bluetooth
+rm -f ${TARGET}/etc/init.d/S40bluetoothd
 rm -f ${TARGET}/etc/init.d/S45connman
 rm -f ${TARGET}/etc/init.d/S48sntp
 rm -f ${TARGET}/etc/init.d/S49ntp
