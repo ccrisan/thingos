@@ -13,7 +13,7 @@ RUN_DIR=/var/run/docker-compose
 test -x ${PROG} || exit 0
 test -n "${OS_VERSION}" || source /etc/init.d/base
 CONF=$(select_conf ${SYS_CONF} ${BOOT_CONF} ${USER_CONF})
-test -s ${CONF} || exit 0
+test -s "${CONF}" || exit 0
 
 
 function start() {

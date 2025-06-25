@@ -17,7 +17,7 @@ CONNMAN_CONF="/etc/connman/main.conf"
 LINK_NEGO_TIMEOUT=10
 
 
-test -s ${CONNMAN_CONF} && exit 0
+test -s "${CONNMAN_CONF}" && exit 0
 
 test -n "${OS_VERSION}" || source /etc/init.d/base
 

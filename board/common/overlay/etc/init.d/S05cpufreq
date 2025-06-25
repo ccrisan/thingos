@@ -18,9 +18,9 @@ test -d "${CPU_FREQ_DIR}" && test -d "${GOVERNOR_DIR}" || exit 0  # no CPU freq 
 test -n "${OS_VERSION}" || source /etc/init.d/base
 
 configure() {
-    test -s ${SYS_CONF} && source ${SYS_CONF}
-    test -s ${BOOT_CONF} && source ${BOOT_CONF}
-    test -s ${CONF} && source ${CONF}
+    test -s "${SYS_CONF}" && source "${SYS_CONF}"
+    test -s "${BOOT_CONF}" && source "${BOOT_CONF}"
+    test -s "${CONF}" && source "${CONF}"
 
     echo ${CPU_FREQ_GOVERNOR} > ${CPU_FREQ_DIR}/scaling_governor
     if [[ ${CPU_FREQ_GOVERNOR} == "ondemand" ]]; then

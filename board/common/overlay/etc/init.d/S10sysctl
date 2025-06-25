@@ -19,14 +19,14 @@ case "$1" in
     start)
         if [[ -f ${FIRST_RUN_FILE} ]]; then
             msg_begin "Applying sysctl parameters (final)"
-            test -s ${SYS_CONF} && sysctl -q -p ${SYS_CONF}
-            test -s ${CONF} && sysctl -q -p ${CONF}
-            test -s ${BOOT_CONF} && sysctl -q -p ${BOOT_CONF}
+            test -s "${SYS_CONF}" && sysctl -q -p ${SYS_CONF}
+            test -s "${CONF}" && sysctl -q -p ${CONF}
+            test -s "${BOOT_CONF}" && sysctl -q -p ${BOOT_CONF}
         else
             msg_begin "Applying sysctl parameters"
-            test -s ${SYS_CONF} && sysctl -e -q -p ${SYS_CONF}
-            test -s ${CONF} && sysctl -e -q -p ${CONF}
-            test -s ${BOOT_CONF} && sysctl -e -q -p ${BOOT_CONF}
+            test -s "${SYS_CONF}" && sysctl -e -q -p ${SYS_CONF}
+            test -s "${CONF}" && sysctl -e -q -p ${CONF}
+            test -s "${BOOT_CONF}" && sysctl -e -q -p ${BOOT_CONF}
             touch ${FIRST_RUN_FILE}
         fi
         msg_done

@@ -118,7 +118,7 @@ function configure_ifaces() {
 
 function assign_iface_ip() {
     hostapd_conf=/var/run/hostapd.conf
-    test -s ${DNSMASQ_CONF} || return
+    test -s "${DNSMASQ_CONF}" || return
     dnsmasq_ip=$(cat ${DNSMASQ_CONF} | grep range | cut -d '=' -f 2 | cut -d '.' -f 1,2,3).1
     dnsmasq_iface=$(cat ${DNSMASQ_CONF} | grep interface | cut -d '=' -f 2)
     hostapd_iface=$(cat ${hostapd_conf} | grep interface | cut -d '=' -f 2)

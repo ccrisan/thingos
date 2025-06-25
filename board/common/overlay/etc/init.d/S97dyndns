@@ -4,7 +4,7 @@ PROG="/usr/sbin/dyndns-update"
 SCRIPT="/data/etc/dyndns-update.sh"
 
 
-test -s ${SCRIPT} || exit 0
+test -s "${SCRIPT}" || exit 0
 
 test -n "${OS_VERSION}" || source /etc/init.d/base
 

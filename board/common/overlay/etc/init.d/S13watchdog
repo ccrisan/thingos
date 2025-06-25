@@ -17,9 +17,9 @@ USER_CHECK="/data/etc/watchdog-check"
 CHECK_LOG="/var/log/watchdog-check.log"
 CHECK_INTERVAL=10
 
-test -s ${SYS_CONF} && source ${SYS_CONF}
-test -s ${USER_CONF} && source ${USER_CONF}
-test -s ${BOOT_CONF} && source ${BOOT_CONF}
+test -s "${SYS_CONF}" && source "${SYS_CONF}"
+test -s "${USER_CONF}" && source "${USER_CONF}"
+test -s "${BOOT_CONF}" && source "${BOOT_CONF}"
 
 test -n "${OS_VERSION}" || source /etc/init.d/base
 

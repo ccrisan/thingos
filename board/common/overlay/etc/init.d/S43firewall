@@ -7,7 +7,7 @@ BOOT_CONF="/boot/firewall.sh"
 
 test -n "${OS_VERSION}" || source /etc/init.d/base
 
-test -s ${SYS_CONF} || test -s ${USER_CONF} || test -s ${BOOT_CONF} || exit 0
+test -s "${SYS_CONF}" || test -s "${USER_CONF}" || test -s "${BOOT_CONF}" || exit 0
 
 
 start() {

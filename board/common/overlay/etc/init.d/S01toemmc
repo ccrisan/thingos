@@ -3,7 +3,7 @@
 TOEMMC_PROG="/sbin/toemmc"
 TOEMMC_CONF="/boot/toemmc.conf"
 
-test -s ${TOEMMC_CONF} || exit 0
+test -s "${TOEMMC_CONF}" || exit 0
 test -n "${OS_VERSION}" || source /etc/init.d/base
 
 

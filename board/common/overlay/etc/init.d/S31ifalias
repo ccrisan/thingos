@@ -9,9 +9,9 @@ test -n "${OS_VERSION}" || source /etc/init.d/base
 
 start() {
     msg_begin "Renaming network interfaces"
-    test -s ${SYS_CONF} && source ${SYS_CONF}
-    test -s ${CONF} && source ${CONF}
-    test -s ${BOOT_CONF} && source ${BOOT_CONF}
+    test -s "${SYS_CONF}" && source "${SYS_CONF}"
+    test -s "${CONF}" && source "${CONF}"
+    test -s "${BOOT_CONF}" && source "${BOOT_CONF}"
     
     ifaces=$(ls /sys/class/net 2>/dev/null)
     test -z "${ifaces}" && return

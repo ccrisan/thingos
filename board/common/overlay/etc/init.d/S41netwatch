@@ -3,9 +3,9 @@
 CONF="/etc/netwatch.conf"
 CP_CONF="/etc/captive-portal.conf"
 
-test -s ${CONF} || exit 0
-source ${CONF}
-source ${CP_CONF}
+test -s "${CONF}" || exit 0
+source "${CONF}"
+source "${CP_CONF}"
 
 test -n "${OS_VERSION}" || source /etc/init.d/base
 
