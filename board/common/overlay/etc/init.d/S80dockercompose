@@ -17,8 +17,8 @@ ENV_FILE=/tmp/docker-compose.env
 
 test -x ${DOCKER} || exit 0
 test -n "${OS_VERSION}" || source /etc/init.d/base
-CONF=$(select_conf ${SYS_CONF} ${BOOT_CONF} ${USER_CONF})
-test -s "${CONF}" || exit 0
+CONF=$(append_conf ${SYS_CONF} ${BOOT_CONF} ${USER_CONF})
+test -n "${CONF}" || exit 0
 
 function make_env_file() {
     echo -n > ${ENV_FILE}
@@ -49,9 +49,11 @@ function start() {
     export COMPOSE_HTTP_TIMEOUT=300
     
     make_env_file
-    ${DOCKER} compose --env-file ${ENV_FILE} -p ${PROJ} --project-directory ${RUN_DIR} -f ${CONF} pull &>${LOG}
-    ${DOCKER} compose --env-file ${ENV_FILE} -p ${PROJ} --project-directory ${RUN_DIR} -f ${CONF} up --no-start &>>${LOG}
-    ${DOCKER} compose --env-file ${ENV_FILE} -p ${PROJ} --project-directory ${RUN_DIR} -f ${CONF} up -d &>>${LOG}
+    conf=$(echo ${CONF} | sed 's/ / -f /g')
+    
+    ${DOCKER} compose --env-file ${ENV_FILE} -p ${PROJ} --project-directory ${RUN_DIR} -f ${conf} pull &>${LOG}
+    ${DOCKER} compose --env-file ${ENV_FILE} -p ${PROJ} --project-directory ${RUN_DIR} -f ${conf} up --no-start &>>${LOG}
+    ${DOCKER} compose --env-file ${ENV_FILE} -p ${PROJ} --project-directory ${RUN_DIR} -f ${conf} up -d &>>${LOG}
     test $? == 0 && msg_done || msg_fail
 }
 
@@ -59,7 +61,9 @@ function stop() {
     msg_begin "Stopping docker-compose"
     
     make_env_file
-    ${DOCKER} compose --env-file ${ENV_FILE} -p ${PROJ} --project-directory ${RUN_DIR} -f ${CONF} stop &>>${LOG}
+    conf=$(echo ${CONF} | sed 's/ / -f /g')
+
+    ${DOCKER} compose --env-file ${ENV_FILE} -p ${PROJ} --project-directory ${RUN_DIR} -f ${conf} stop &>>${LOG}
     test $? == 0 && msg_done || msg_fail
 }
 

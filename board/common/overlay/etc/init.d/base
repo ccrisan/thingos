@@ -81,3 +81,27 @@ select_conf() {
     
     return 1
 }
+
+append_conf() {
+    # $1 - system config file
+    # $2 - boot config file
+    # $3 - user config file
+
+    # Returns a list of space-separated existing config files (and with size > 0) file, in this order:
+    #  * user config file
+    #  * boot config file
+    #  * system config file
+
+    system_conf="$1"
+    boot_conf="$2"
+    user_conf="$3"
+    
+    files=$(
+        test -s "${user_conf}" && echo "${user_conf}"
+        test -s "${boot_conf}" && echo "${boot_conf}"
+        test -s "${system_conf}" && echo "${system_conf}"
+    )
+    
+    echo ${files}
+}
+
