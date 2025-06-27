@@ -4,17 +4,28 @@ SYS_CONF=/etc/docker-compose.yml
 BOOT_CONF=/boot/docker-compose.yml
 USER_CONF=/data/etc/docker-compose.yml
 
-PROG=/usr/bin/docker-compose
+SYS_ENV=/etc/docker-compose.env
+BOOT_ENV=/boot/docker-compose.env
+USER_ENV=/data/etc/docker-compose.env
+
+DOCKER=/usr/bin/docker
 LOG=/var/log/docker-compose.log
 
 PROJ=system
 RUN_DIR=/var/run/docker-compose
+ENV_FILE=/tmp/docker-compose.env
 
-test -x ${PROG} || exit 0
+test -x ${DOCKER} || exit 0
 test -n "${OS_VERSION}" || source /etc/init.d/base
 CONF=$(select_conf ${SYS_CONF} ${BOOT_CONF} ${USER_CONF})
 test -s "${CONF}" || exit 0
 
+function make_env_file() {
+    echo -n > ${ENV_FILE}
+    for env_file in ${SYS_ENV} ${BOOT_ENV} ${USER_ENV}; do
+        test -s ${env_file} && cat ${env_file} >> ${ENV_FILE}
+    done
+}
 
 function start() {
     msg_begin "Starting docker-compose"
@@ -36,15 +47,19 @@ function start() {
 
     mkdir -p ${RUN_DIR}
     export COMPOSE_HTTP_TIMEOUT=300
-    ${PROG} -p ${PROJ} --project-directory ${RUN_DIR} -f ${CONF} pull &>${LOG}
-    ${PROG} -p ${PROJ} --project-directory ${RUN_DIR} -f ${CONF} up --no-start &>>${LOG}
-    ${PROG} -p ${PROJ} --project-directory ${RUN_DIR} -f ${CONF} up -d &>>${LOG}
+    
+    make_env_file
+    ${DOCKER} compose --env-file ${ENV_FILE} -p ${PROJ} --project-directory ${RUN_DIR} -f ${CONF} pull &>${LOG}
+    ${DOCKER} compose --env-file ${ENV_FILE} -p ${PROJ} --project-directory ${RUN_DIR} -f ${CONF} up --no-start &>>${LOG}
+    ${DOCKER} compose --env-file ${ENV_FILE} -p ${PROJ} --project-directory ${RUN_DIR} -f ${CONF} up -d &>>${LOG}
     test $? == 0 && msg_done || msg_fail
 }
 
 function stop() {
     msg_begin "Stopping docker-compose"
-    ${PROG} -p ${PROJ} --project-directory ${RUN_DIR} -f ${CONF} stop &>>${LOG}
+    
+    make_env_file
+    ${DOCKER} compose --env-file ${ENV_FILE} -p ${PROJ} --project-directory ${RUN_DIR} -f ${CONF} stop &>>${LOG}
     test $? == 0 && msg_done || msg_fail
 }
 
