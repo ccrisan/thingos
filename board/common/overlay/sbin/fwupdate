@@ -653,7 +653,7 @@ function do_install() {
     latest_version=${latest[0]}
     if [[ "$1" == latest ]] && [[ "${OS_VERSION}" == "${latest_version}" ]]; then
         echo "already running latest version"
-        return
+        return 2
     fi
 
     echo "installing $1"

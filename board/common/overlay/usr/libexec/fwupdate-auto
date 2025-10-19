@@ -1,7 +1,13 @@
 #!/bin/bash
 
-sleep $((RANDOM % 86400))
+sleep $((RANDOM % 82800))
 source /etc/init.d/os_conf
 test "${OS_FIRMWARE_AUTO_UPDATE}" == true || exit 0
 test "${OS_DEBUG}" == true && { echo "Skipping automatic fwupdate in debug mode"; exit 0; }
+
+if  [[ -x /usr/libexec/fwupdate-auto-hook ]]; then
+    /usr/libexec/fwupdate-auto-hook && reboot_needed=false || reboot_needed=true
+fi
 /sbin/fwupdate install latest
+test $? == 2 && test ${reboot_needed} == true && /sbin/reboot
+
