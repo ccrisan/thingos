@@ -17,4 +17,5 @@ docker run --privileged -it --rm -u $(id -u):$(id -g) \
        -v "$(pwd)":/os \
        -e TB_CUSTOM_CMD="./build.sh ${args}" \
        --env-file ${ENV_FILE} \
+       --device /dev/loop-control:/dev/loop-control \
        "${DOCKER_BUILDER_IMAGE}"
