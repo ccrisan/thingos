@@ -1,4 +1,2 @@
-# sha256 locally computed
-sha256  92e5140217299690ab4556ff0853065931fe9885b86b3e8fd62e4446df86e910  pymodbus-3.0.0.tar.gz
-# Hash for license file
+sha256  26c1aa9919b24f2247794d5d9d80f65ec06fdfd9bd6b76b81d446b55335cabf3  pymodbus-3.5.2.tar.gz
 sha256  796a47993313691ea404d8af7e4c0f9daf1d2760e3900938985b59c9008eee2f  doc/LICENSE

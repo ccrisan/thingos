@@ -2,6 +2,10 @@
 
 PROG=/usr/bin/dockerd
 LOG=/var/log/dockerd.log
+CONF=/etc/docker/daemon.json
+RUN_DIR=/run/docker
+VARLIB_DIR=/var/lib/docker
+DATA_DIR=/var/lib/docker
 
 test -x ${PROG} || exit 0
 
@@ -10,12 +14,11 @@ test -n "${OS_VERSION}" || source /etc/init.d/base
 
 function start() {
     msg_begin "Starting docker engine"
-    mkdir -p /data/docker
-    ln -sf /data/docker /var/lib/docker
-    mkdir -p /var/run/docker
-    test -f /var/lib/docker/daemon.json || echo '{}' > /var/lib/docker/daemon.json
+    mkdir -p ${DATA_DIR}
+    test -L ${VARLIB_DIR} || ln -sf ${DATA_DIR} ${VARLIB_DIR}
+    mkdir -p ${RUN_DIR}
     modprobe fuse &>/dev/null
-    ${PROG} -H unix:///var/run/docker.sock -G root > ${LOG} 2>&1 &
+    ${PROG} -H unix:///var/run/docker.sock -G root >> ${LOG} 2>&1 &
     test $? == 0 && msg_done || msg_fail
 }
 
