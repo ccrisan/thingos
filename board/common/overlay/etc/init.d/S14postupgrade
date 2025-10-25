@@ -5,6 +5,7 @@ VERSION_FILE="/data/etc/version"
 POST_UPGRADE_DIR="/usr/share/post-upgrade"
 POST_UPGRADE_NET_SCHEDULED="/data/.post-upgrade-net-scheduled"
 POST_UPGRADE_APP_SCHEDULED="/data/.post-upgrade-app-scheduled"
+FLASH_REBOOT_STARTED_FILE="/data/.fwupdate/flash_reboot_started"
 
 LOG="/var/log/post-upgrade.log"
 
@@ -88,6 +89,9 @@ function run_post_upgrade() {
 
 case "$1" in
     start)
+        # Ensure the fwupdate reboot flag is cleared
+        rm -f ${FLASH_REBOOT_STARTED_FILE}
+
         run_post_upgrade
         cp ${SYS_VERSION_FILE} ${VERSION_FILE}
         ;;
