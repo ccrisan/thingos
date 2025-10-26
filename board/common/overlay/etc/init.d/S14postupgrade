@@ -12,6 +12,9 @@ LOG="/var/log/post-upgrade.log"
 
 test -n "${OS_VERSION}" || source /etc/init.d/base
 
+# Ensure the fwupdate reboot flag is cleared
+rm -f ${FLASH_REBOOT_STARTED_FILE}
+
 hash=$(md5sum ${VERSION_FILE} 2>/dev/null | cut -d ' ' -f 1)
 sys_hash=$(md5sum ${SYS_VERSION_FILE} 2>/dev/null | cut -d ' ' -f 1)
 
@@ -89,9 +92,6 @@ function run_post_upgrade() {
 
 case "$1" in
     start)
-        # Ensure the fwupdate reboot flag is cleared
-        rm -f ${FLASH_REBOOT_STARTED_FILE}
-
         run_post_upgrade
         cp ${SYS_VERSION_FILE} ${VERSION_FILE}
         ;;
