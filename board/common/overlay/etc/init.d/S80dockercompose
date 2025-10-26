@@ -46,7 +46,7 @@ function start() {
     fi
 
     mkdir -p ${RUN_DIR}
-    export COMPOSE_HTTP_TIMEOUT=300
+    export COMPOSE_HTTP_TIMEOUT=600
     
     make_env_file
     conf=$(echo ${CONF} | sed 's/ / -f /g')
@@ -67,6 +67,17 @@ function stop() {
     test $? == 0 && msg_done || msg_fail
 }
 
+function pull() {
+    msg_begin "Pulling docker-compose images"
+    
+    make_env_file
+    conf=$(echo ${CONF} | sed 's/ / -f /g')
+    export COMPOSE_HTTP_TIMEOUT=600
+
+    ${DOCKER} compose --env-file ${ENV_FILE} -p ${PROJ} --project-directory ${RUN_DIR} -f ${conf} pull &>>${LOG}
+    test $? == 0 && msg_done || msg_fail
+}
+
 case "$1" in
     start)
         start
@@ -81,8 +92,12 @@ case "$1" in
         start
         ;;
 
+    pull)
+        pull
+        ;;
+    
     *)
-        echo "Usage: $0 {start|stop|restart}"
+        echo "Usage: $0 {start|stop|restart|pull}"
         exit 1
         ;;
 esac
