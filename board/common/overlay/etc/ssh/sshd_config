@@ -7,3 +7,5 @@ Banner /var/run/ssh/sshd_banner
 
 Subsystem sftp /usr/libexec/sftp-server
 IPQoS cs0 cs0
+
+KexAlgorithms sntrup761x25519-sha512@openssh.com,curve25519-sha256
