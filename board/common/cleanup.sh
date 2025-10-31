@@ -215,7 +215,8 @@ rm -f ${TARGET}/etc/init.d/S80dhcp-server
 rm -f ${TARGET}/etc/init.d/S80dnsmasq
 rm -f ${TARGET}/etc/init.d/S91smb
 
-# other unwanted dirs
+# other unwanted stuff
+rm -rf ${TARGET}/etc/redis.conf
 rm -rf ${TARGET}/data/*
 rm -rf ${TARGET}/run
 rm -rf ${TARGET}/etc/profile.d
