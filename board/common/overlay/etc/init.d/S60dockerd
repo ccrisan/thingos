@@ -5,7 +5,7 @@ LOG=/var/log/dockerd.log
 CONF=/etc/docker/daemon.json
 RUN_DIR=/run/docker
 VARLIB_DIR=/var/lib/docker
-DATA_DIR=/var/lib/docker
+DATA_DIR=/data/docker
 
 test -x ${PROG} || exit 0
 
