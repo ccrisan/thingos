@@ -8,6 +8,10 @@ SYS_ENV=/etc/docker-compose.env
 BOOT_ENV=/boot/docker-compose.env
 USER_ENV=/data/etc/docker-compose.env
 
+SYS_ENV_SH=/etc/docker-compose.env.sh
+BOOT_ENV_SH=/boot/docker-compose.env.sh
+USER_ENV_SH=/data/etc/docker-compose.env.sh
+
 DOCKER=/usr/bin/docker
 LOG=/var/log/docker-compose.log
 
@@ -21,6 +25,10 @@ test -x ${DOCKER} || exit 0
 test -n "${OS_VERSION}" || source /etc/init.d/base
 CONF=$(append_conf ${SYS_CONF} ${BOOT_CONF} ${USER_CONF})
 test -n "${CONF}" || exit 0
+
+for env_sh_file in ${SYS_ENV_SH} ${BOOT_ENV_SH} ${USER_ENV_SH}; do
+    test -s ${env_sh_file} && source ${env_sh_file}
+done
 
 function make_env_file() {
     echo -n > ${ENV_FILE}
