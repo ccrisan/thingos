@@ -115,6 +115,8 @@ function expand_placeholders() {
 function cleanup_on_exit() {
     set +e
 
+    echo "cleaning up"
+
     if [[ -f /sbin/reboot.bak ]]; then
         rm -f /sbin/reboot
         mv /sbin/reboot.bak /sbin/reboot
@@ -126,7 +128,8 @@ function cleanup_on_exit() {
     losetup -d ${ROOT_LOOP} 2>/dev/null
 
     if [[ ${boot_mounted_rw} == true ]]; then
-        mount -T /tmp/fstab.disk -o ro /boot 2>/dev/null
+        mount -T /tmp/fstab.disk /boot 2>/dev/null
+        mount -o remount,ro /boot
     fi
     
     # remove *started files since corresponding processes have normally exited
@@ -548,7 +551,8 @@ function do_flash_boot() {
     echo ${pid} > ${DD_PID_FILE}
     wait ${pid}
 
-    mount -T /tmp/fstab.disk -o rw /boot
+    mount -T /tmp/fstab.disk /boot
+    mount -o remount,rw /boot
     boot_mounted_rw=true
 
     # The /boot/factory-defaults.tar.xz file is always preserved across updates
