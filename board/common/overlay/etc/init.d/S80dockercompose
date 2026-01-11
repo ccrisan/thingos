@@ -83,7 +83,7 @@ function pull() {
     conf=$(echo ${CONF} | sed 's/ / -f /g')
 
     ${DOCKER} compose --env-file ${ENV_FILE} -p ${PROJ} --project-directory ${RUN_DIR} -f ${conf} pull &>>${LOG}
-    test $? == 0 && msg_done || msg_fail
+    test $? == 0 && msg_done || { msg_fail; exit 1; }
 }
 
 function generic_command() {
