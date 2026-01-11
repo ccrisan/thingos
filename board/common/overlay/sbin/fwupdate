@@ -4,6 +4,9 @@
 #### Usage ####
 
 function exit_usage() {
+    echo "Manage the OS firmware on this device."
+    echo ""
+    echo "Usage:"
     echo "       fwupdate current"
     echo "           shows the current version"
     echo "       fwupdate latest"
