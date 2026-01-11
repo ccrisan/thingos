@@ -18,7 +18,7 @@ test -s "${CONF}" || exit 0
 start() {
     msg_begin "Starting redis"
     db_dir=$(cat ${CONF} | grep -E '^dir' | cut -d ' ' -f 2)
-    mkdir -p ${db_dir}
+    test -n "${db_dir}" && mkdir -p ${db_dir}
     ${PROG} ${CONF}
     test $? == 0 && msg_done || msg_fail
 }
