@@ -1,0 +1,2 @@
+kernel=zImage
+fdt=sun8i-s3-pinecube.dtb
